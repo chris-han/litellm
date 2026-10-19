@@ -1,10 +1,10 @@
 import asyncio
 import time
+from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, Any, Final
 
 import httpx
-from pydantic import ConfigDict, TypeAdapter, with_config
-from typing_extensions import NotRequired, ReadOnly, TypedDict
+from typing_extensions import ReadOnly, TypedDict
 
 from litellm._logging import verbose_logger
 from litellm.constants import (
@@ -30,35 +30,14 @@ else:
     LiteLLMLoggingObj = Any
 
 
-@with_config(ConfigDict(extra="allow", strict=True))
-class _RunwayMLOutputItem(TypedDict, total=False):
-    url: NotRequired[ReadOnly[str | None]]
-    b64_json: NotRequired[ReadOnly[str | None]]
-
-
-_RunwayMLOutputValue = (
-    str
-    | int
-    | float
-    | bool
-    | None
-    | list[str | _RunwayMLOutputItem | int | float | bool | None | list[object] | dict[str, object]]
-    | dict[str, object]
-)
-
-
-@with_config(ConfigDict(extra="allow", strict=True))
-class _RunwayMLTask(TypedDict):
+class _RunwayMLTask(TypedDict, total=False):
     """The RunwayML task payload returned by POST /v1/text_to_image and GET /v1/tasks/{id}."""
 
-    id: NotRequired[ReadOnly[object]]
-    status: NotRequired[ReadOnly[str]]
-    output: NotRequired[ReadOnly[_RunwayMLOutputValue]]
-    failure: NotRequired[ReadOnly[object]]
-    failureCode: NotRequired[ReadOnly[object]]
-
-
-_RUNWAYML_TASK: Final = TypeAdapter(_RunwayMLTask)
+    id: ReadOnly[str]
+    status: ReadOnly[str]
+    output: ReadOnly[Sequence[str | Mapping[str, str]]]
+    failure: ReadOnly[str]
+    failureCode: ReadOnly[str]
 
 
 class RunwayMLImageGenerationConfig(BaseImageGenerationConfig):
@@ -221,7 +200,7 @@ class RunwayMLImageGenerationConfig(BaseImageGenerationConfig):
 
     def _poll_task_sync(
         self,
-        task_id: object,
+        task_id: str,
         api_base: str,
         headers: dict[str, str],
         timeout_secs: float = 600,
@@ -259,7 +238,7 @@ class RunwayMLImageGenerationConfig(BaseImageGenerationConfig):
             response = client.get(url=task_url, headers=headers)
             response.raise_for_status()
 
-            response_data = _RUNWAYML_TASK.validate_python(response.json())
+            response_data: _RunwayMLTask = response.json()
 
             # Check task status
             status = self._check_task_status(response_data=response_data)
@@ -272,7 +251,7 @@ class RunwayMLImageGenerationConfig(BaseImageGenerationConfig):
 
     async def _poll_task_async(
         self,
-        task_id: object,
+        task_id: str,
         api_base: str,
         headers: dict[str, str],
         timeout_secs: float = 600,
@@ -308,7 +287,7 @@ class RunwayMLImageGenerationConfig(BaseImageGenerationConfig):
             response = await client.get(url=task_url, headers=headers)
             response.raise_for_status()
 
-            response_data = _RUNWAYML_TASK.validate_python(response.json())
+            response_data: _RunwayMLTask = response.json()
 
             # Check task status
             status = self._check_task_status(response_data=response_data)
@@ -354,13 +333,14 @@ class RunwayMLImageGenerationConfig(BaseImageGenerationConfig):
         }
         """
         try:
-            response_data: Final = _RUNWAYML_TASK.validate_python(raw_response.json())
+            response_data: _RunwayMLTask = raw_response.json()
         except Exception as e:
             raise self.get_error_class(
                 error_message=f"Error transforming image generation response: {e}",
                 status_code=raw_response.status_code,
                 headers=raw_response.headers,
             )
+
         verbose_logger.debug("RunwayML starting polling...")
 
         # Get task ID
@@ -383,13 +363,13 @@ class RunwayMLImageGenerationConfig(BaseImageGenerationConfig):
         )
 
         # Update response_data with polled result
-        polled_response_data: Final = _RUNWAYML_TASK.validate_python(raw_response.json())
+        response_data = raw_response.json()
 
         verbose_logger.debug("RunwayML polling complete, transforming to OpenAI format")
 
         # Transform RunwayML response to OpenAI format
         return self._transform_runwayml_response_to_openai(
-            response_data=polled_response_data,
+            response_data=response_data,
             model_response=model_response,
         )
 
@@ -413,13 +393,14 @@ class RunwayMLImageGenerationConfig(BaseImageGenerationConfig):
         We need to poll the task until it completes (status SUCCEEDED) using async polling.
         """
         try:
-            response_data: Final = _RUNWAYML_TASK.validate_python(raw_response.json())
+            response_data: _RunwayMLTask = raw_response.json()
         except Exception as e:
             raise self.get_error_class(
                 error_message=f"Error transforming image generation response: {e}",
                 status_code=raw_response.status_code,
                 headers=raw_response.headers,
             )
+
         verbose_logger.debug("RunwayML starting polling (async)...")
 
         # Get task ID
@@ -442,13 +423,13 @@ class RunwayMLImageGenerationConfig(BaseImageGenerationConfig):
         )
 
         # Update response_data with polled result
-        polled_response_data: Final = _RUNWAYML_TASK.validate_python(raw_response.json())
+        response_data = raw_response.json()
 
         verbose_logger.debug("RunwayML polling complete (async), transforming to OpenAI format")
 
         # Transform RunwayML response to OpenAI format
         return self._transform_runwayml_response_to_openai(
-            response_data=polled_response_data,
+            response_data=response_data,
             model_response=model_response,
         )
 
