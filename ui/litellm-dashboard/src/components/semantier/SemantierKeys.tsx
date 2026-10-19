@@ -159,9 +159,10 @@ export function SemantierKeys() {
               />
             </Field>
             <Field>
-              <FieldLabel htmlFor="operational-models">Allowed models</FieldLabel>
+              <FieldLabel id="operational-models-label" htmlFor="operational-models">Allowed models</FieldLabel>
               <MultiSelect
                 id="operational-models"
+                aria-labelledby="operational-models-label"
                 options={(session.allowed_key_models ?? []).map((model) => ({ value: model, label: model }))}
                 value={models}
                 onValueChange={setModels}

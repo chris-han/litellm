@@ -24,6 +24,7 @@ export interface MultiSelectOption {
 
 interface MultiSelectProps {
   id?: string;
+  "aria-labelledby"?: string;
   options: MultiSelectOption[];
   value?: string[];
   onValueChange: (value: string[]) => void;
@@ -53,6 +54,7 @@ const matchesQuery = (option: MultiSelectOption, query: string): boolean => {
 
 export function MultiSelect({
   id,
+  "aria-labelledby": labelledBy,
   options,
   value = [],
   onValueChange,
@@ -121,7 +123,8 @@ export function MultiSelect({
                 id={id}
                 placeholder={loading ? "Loading..." : placeholder}
                 className="min-w-24"
-                aria-label={placeholder || undefined}
+                aria-labelledby={labelledBy}
+                aria-label={labelledBy ? undefined : placeholder || undefined}
               />
               {canClear(selected) && <ComboboxClear className="ml-auto self-center" aria-label="Clear all" />}
             </>

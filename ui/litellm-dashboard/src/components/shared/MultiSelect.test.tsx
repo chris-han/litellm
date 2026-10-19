@@ -40,6 +40,13 @@ const CHIPS_WIDTH = 300;
 const INPUT_WIDTH = 200;
 
 describe("MultiSelect", () => {
+  it("uses the visible field label instead of placeholder text when bound", () => {
+    render(<><label id="models-label" htmlFor="models">Allowed models</label>
+      <MultiSelect id="models" aria-labelledby="models-label" options={OPTIONS}
+        onValueChange={vi.fn()} placeholder="Select enabled organization models" /></>);
+    expect(screen.getByRole("combobox", { name: "Allowed models" })).toBeInTheDocument();
+  });
+
   it("anchors the popup to the chips container rather than the inner input", async () => {
     const { input } = renderMultiSelect();
     const chips = input.closest("[data-slot='combobox-chips']");
