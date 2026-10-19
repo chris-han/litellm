@@ -1,7 +1,10 @@
 import time
-from typing import TYPE_CHECKING, Any, Final
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Any, Final, TypedDict
 
 import httpx
+from pydantic import ConfigDict, TypeAdapter, with_config
+from typing_extensions import ReadOnly
 
 from litellm.llms.base_llm.chat.transformation import BaseLLMException
 from litellm.llms.openai.chat.gpt_transformation import OpenAIGPTConfig
@@ -17,6 +20,37 @@ if TYPE_CHECKING:
     LoggingClass = LiteLLMLoggingObj
 else:
     LoggingClass = Any
+
+
+@with_config(ConfigDict(extra="allow", strict=True))
+class _OobaboogaMessage(TypedDict):
+    content: ReadOnly[str | None]
+
+
+@with_config(ConfigDict(extra="allow", strict=True))
+class _OobaboogaChoice(TypedDict):
+    message: ReadOnly[_OobaboogaMessage]
+
+
+@with_config(ConfigDict(extra="allow", strict=True))
+class _OobaboogaChoicesResponse(TypedDict):
+    choices: ReadOnly[Sequence[_OobaboogaChoice]]
+
+
+@with_config(ConfigDict(extra="allow", strict=True))
+class _OobaboogaUsage(TypedDict):
+    prompt_tokens: ReadOnly[int]
+    completion_tokens: ReadOnly[int]
+    total_tokens: ReadOnly[int]
+
+
+@with_config(ConfigDict(extra="allow", strict=True))
+class _OobaboogaUsageResponse(TypedDict):
+    usage: ReadOnly[_OobaboogaUsage]
+
+
+_CHOICES_RESPONSE_ADAPTER: Final = TypeAdapter(_OobaboogaChoicesResponse)
+_USAGE_RESPONSE_ADAPTER: Final = TypeAdapter(_OobaboogaUsageResponse)
 
 
 class OobaboogaConfig(OpenAIGPTConfig):
@@ -62,7 +96,8 @@ class OobaboogaConfig(OpenAIGPTConfig):
             )
         else:
             try:
-                model_response.choices[0].message.content = completion_response["choices"][0]["message"]["content"]
+                choices_response: Final = _CHOICES_RESPONSE_ADAPTER.validate_python(completion_response)
+                model_response.choices[0].message.content = choices_response["choices"][0]["message"]["content"]
             except Exception as e:
                 raise OobaboogaError(
                     message=str(e),
@@ -71,10 +106,11 @@ class OobaboogaConfig(OpenAIGPTConfig):
 
         model_response.created = int(time.time())
         model_response.model = model
+        usage_response: Final = _USAGE_RESPONSE_ADAPTER.validate_python(completion_response)
         usage: Final = Usage(
-            prompt_tokens=completion_response["usage"]["prompt_tokens"],
-            completion_tokens=completion_response["usage"]["completion_tokens"],
-            total_tokens=completion_response["usage"]["total_tokens"],
+            prompt_tokens=usage_response["usage"]["prompt_tokens"],
+            completion_tokens=usage_response["usage"]["completion_tokens"],
+            total_tokens=usage_response["usage"]["total_tokens"],
         )
         setattr(model_response, "usage", usage)
         return model_response
