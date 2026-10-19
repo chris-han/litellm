@@ -12,7 +12,7 @@ from collections.abc import Mapping
 from typing import Final
 
 import httpx
-from pydantic import ConfigDict, TypeAdapter
+from pydantic import ConfigDict, TypeAdapter, ValidationError
 
 from litellm import LlmProviders
 from litellm.litellm_core_utils.litellm_logging import Logging as LiteLLMLoggingObj
@@ -24,7 +24,24 @@ from litellm.types.utils import EmbeddingResponse
 
 from ..authenticator import get_access_token
 
-_JSON_OBJECT: Final = TypeAdapter(Mapping[str, object], config=ConfigDict(hide_input_in_errors=True))
+_JSON_OBJECT: Final = TypeAdapter(
+    dict[str, object],
+    config=ConfigDict(strict=True, hide_input_in_errors=True),
+)
+_EMBEDDINGS: Final = TypeAdapter(
+    list[dict[str, object]],
+    config=ConfigDict(strict=True, hide_input_in_errors=True),
+)
+_INT_OR_FLOAT: Final = TypeAdapter(int | float, config=ConfigDict(strict=True, hide_input_in_errors=True))
+
+
+def _embedding_prompt_tokens(embedding: Mapping[str, object]) -> int | float:
+    if "usage" not in embedding:
+        return 0
+    usage: Final = _JSON_OBJECT.validate_python(embedding["usage"])
+    if "prompt_tokens" not in usage:
+        return 0
+    return _INT_OR_FLOAT.validate_python(usage["prompt_tokens"])
 
 
 class GigaChatEmbeddingError(BaseLLMException):
@@ -144,7 +161,14 @@ class GigaChatEmbeddingConfig(BaseEmbeddingConfig):
             "model": "Embeddings"
         }
         """
-        response_json: Final = raw_response.json()
+        try:
+            response_json: Final = _JSON_OBJECT.validate_python(raw_response.json())
+        except ValidationError as e:
+            raise TypeError("GigaChat embedding response must be a JSON object") from e
+
+        embeddings: Final = _EMBEDDINGS.validate_python(response_json.get("data", []))
+        if "data" in response_json:
+            response_json["data"] = embeddings
 
         # Log response
         logging_obj.post_call(
@@ -155,14 +179,9 @@ class GigaChatEmbeddingConfig(BaseEmbeddingConfig):
         )
 
         # Calculate total tokens from individual embeddings
-        total_tokens = 0
-        if "data" in response_json:
-            for emb in response_json["data"]:
-                if "usage" in emb and "prompt_tokens" in emb["usage"]:
-                    total_tokens += emb["usage"]["prompt_tokens"]
-                # Remove usage from individual embeddings (not part of OpenAI format)
-                if "usage" in emb:
-                    del emb["usage"]
+        total_tokens: Final = sum(_embedding_prompt_tokens(embedding) for embedding in embeddings)
+        for emb in embeddings:
+            emb.pop("usage", None)
 
         # Set overall usage
         response_json["usage"] = {
