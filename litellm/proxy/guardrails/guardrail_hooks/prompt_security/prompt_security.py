@@ -7,7 +7,8 @@ from typing import TYPE_CHECKING, Final, Literal, Optional
 
 import httpx
 from fastapi import HTTPException
-from typing_extensions import ReadOnly, TypedDict
+from pydantic import ConfigDict, TypeAdapter
+from typing_extensions import ReadOnly, TypeAliasType, TypedDict
 
 from litellm._logging import verbose_proxy_logger
 from litellm.exceptions import Timeout as LiteLLMTimeout
@@ -106,6 +107,23 @@ class _SanitizeResult(TypedDict):
     content: ReadOnly[str | None]
     metadata: ReadOnly[_SanitizeMetadata]
     violations: ReadOnly[Sequence[str]]
+
+
+_ProtectResponseType = TypeAliasType("_ProtectResponseType", _ProtectResponse)
+_PROTECT_RESPONSE_ADAPTER: Final[TypeAdapter[_ProtectResponse]] = TypeAdapter(
+    _ProtectResponseType,
+    config=ConfigDict(strict=True, extra="allow"),
+)
+_SanitizeUploadResponseType = TypeAliasType("_SanitizeUploadResponseType", _SanitizeUploadResponse)
+_SANITIZE_UPLOAD_RESPONSE_ADAPTER: Final[TypeAdapter[_SanitizeUploadResponse]] = TypeAdapter(
+    _SanitizeUploadResponseType,
+    config=ConfigDict(strict=True, extra="allow"),
+)
+_SanitizeStatusResponseType = TypeAliasType("_SanitizeStatusResponseType", _SanitizeStatusResponse)
+_SANITIZE_STATUS_RESPONSE_ADAPTER: Final[TypeAdapter[_SanitizeStatusResponse]] = TypeAdapter(
+    _SanitizeStatusResponseType,
+    config=ConfigDict(strict=True, extra="allow"),
+)
 
 
 class PromptSecurityGuardrail(CustomGuardrail):
@@ -296,7 +314,7 @@ class PromptSecurityGuardrail(CustomGuardrail):
             timeout=self.timeout,
         )
         response.raise_for_status()
-        res: Final[_ProtectResponse] = response.json()
+        res: Final = _PROTECT_RESPONSE_ADAPTER.validate_python(response.json())
 
         self._log_api_response(
             url=f"{self.api_base}/api/protect",
@@ -412,7 +430,7 @@ class PromptSecurityGuardrail(CustomGuardrail):
             timeout=self.timeout,
         )
         response.raise_for_status()
-        res: Final[_ProtectResponse] = response.json()
+        res: Final = _PROTECT_RESPONSE_ADAPTER.validate_python(response.json())
 
         self._log_api_response(
             url=f"{self.api_base}/api/protect",
@@ -528,7 +546,7 @@ class PromptSecurityGuardrail(CustomGuardrail):
             timeout=self.timeout,
         )
         upload_response.raise_for_status()
-        upload_result: Final[_SanitizeUploadResponse] = upload_response.json()
+        upload_result: Final = _SANITIZE_UPLOAD_RESPONSE_ADAPTER.validate_python(upload_response.json())
         job_id: Final = upload_result.get("jobId")
 
         self._log_api_response(
@@ -559,7 +577,7 @@ class PromptSecurityGuardrail(CustomGuardrail):
                 timeout=self.timeout,
             )
             poll_response.raise_for_status()
-            result: _SanitizeStatusResponse = poll_response.json()
+            result: _SanitizeStatusResponse = _SANITIZE_STATUS_RESPONSE_ADAPTER.validate_python(poll_response.json())
 
             self._log_api_response(
                 url=f"{self.api_base}/api/sanitizeFile",
