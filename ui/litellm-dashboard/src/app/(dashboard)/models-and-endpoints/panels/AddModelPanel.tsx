@@ -1,5 +1,6 @@
 "use client";
 
+import { extractProxyErrorMessage } from "@/lib/http/client";
 import { isSemantierGateway } from "@/lib/http/semantier";
 
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -67,6 +68,7 @@ export default function AddModelPanel() {
     [pickedProvider, modelCostMapData],
   );
   const decisionCatalog = useMemo(() => buildDecisionCatalog(modelCostMapData), [modelCostMapData]);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: ["models", "list"] });
@@ -74,6 +76,7 @@ export default function AddModelPanel() {
   const mountedValues = () => projectMountedValues(registry, form.getValues);
 
   const handleOk = async (): Promise<boolean> => {
+    setSubmitError(null);
     const isValid = await form.trigger(registry.mountedNames() as string[]);
     if (!isValid) {
       return false;
@@ -88,25 +91,33 @@ export default function AddModelPanel() {
         },
       },
       refresh,
+      (error) => setSubmitError(extractProxyErrorMessage(error)),
     );
     return true;
   };
 
   return (
-    <AddModelForm
-      form={form}
-      registry={registry}
-      mountedValues={mountedValues}
-      handleOk={handleOk}
-      selectedProvider={selectedProvider}
-      setSelectedProvider={setSelectedProvider}
-      providerModels={providerModels}
-      getPlaceholder={getPlaceholder}
-      showAdvancedSettings={showAdvancedSettings}
-      setShowAdvancedSettings={setShowAdvancedSettings}
-      teams={teams ?? null}
-      credentials={credentialsResponse?.credentials || []}
-      decisionCatalog={decisionCatalog}
-    />
+    <>
+      {submitError && (
+        <p role="alert" className="mb-4 text-sm text-destructive">
+          {submitError}
+        </p>
+      )}
+      <AddModelForm
+        form={form}
+        registry={registry}
+        mountedValues={mountedValues}
+        handleOk={handleOk}
+        selectedProvider={selectedProvider}
+        setSelectedProvider={setSelectedProvider}
+        providerModels={providerModels}
+        getPlaceholder={getPlaceholder}
+        showAdvancedSettings={showAdvancedSettings}
+        setShowAdvancedSettings={setShowAdvancedSettings}
+        teams={teams ?? null}
+        credentials={credentialsResponse?.credentials || []}
+        decisionCatalog={decisionCatalog}
+      />
+    </>
   );
 }

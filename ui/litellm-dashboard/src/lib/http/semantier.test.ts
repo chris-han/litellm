@@ -31,3 +31,18 @@ describe("Semantier cookie facade", () => {
     );
   });
 });
+
+it("ignores unset native optional fields but rejects a selected unsupported auth method", () => {
+  expect(
+    modelMutationBody({
+      model_name: "native",
+      litellm_params: { model: "azure/gpt-5.1", azure_ad_token: undefined, client_secret: "", tenant_id: undefined },
+    }),
+  ).toEqual({ model_name: "native", litellm_params: { model: "azure/gpt-5.1" } });
+  expect(() =>
+    modelMutationBody({
+      model_name: "native",
+      litellm_params: { model: "azure/gpt-5.1", azure_ad_token: "unsupported" },
+    }),
+  ).toThrow("Unsupported model setting");
+});

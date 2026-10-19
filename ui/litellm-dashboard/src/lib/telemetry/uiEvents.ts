@@ -1,3 +1,4 @@
+import { isSemantierGateway } from "@/lib/http/semantier";
 import { queryClient } from "@/contexts/ReactQueryProvider";
 import { backgroundFetchClient } from "@/lib/http/api";
 import type { components } from "@/lib/http/schema";
@@ -17,8 +18,10 @@ export const pageNavigationQuery = {
 } as const;
 
 export const recordUiEvent = (event: UiEvent): Promise<void> =>
-  queryClient
-    .fetchQuery(pageNavigationQuery)
-    .then((enabled) => (enabled ? backgroundFetchClient.POST("/telemetry/ui_events", { body: event }) : undefined))
-    .then(() => undefined)
-    .catch(() => undefined);
+  isSemantierGateway
+    ? Promise.resolve()
+    : queryClient
+        .fetchQuery(pageNavigationQuery)
+        .then((enabled) => (enabled ? backgroundFetchClient.POST("/telemetry/ui_events", { body: event }) : undefined))
+        .then(() => undefined)
+        .catch(() => undefined);

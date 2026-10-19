@@ -211,7 +211,7 @@ const ProviderSpecificFieldsContent: React.FC<ProviderSpecificFieldsProps> = ({
     [authTypes, selectedAuthType?.id],
   );
 
-  const allFields = React.useMemo(() => {
+  const nativeFields = React.useMemo(() => {
     if (credentialOnlySelected) {
       return [];
     }
@@ -233,6 +233,19 @@ const ProviderSpecificFieldsContent: React.FC<ProviderSpecificFieldsProps> = ({
     selectedAuthType,
     credentialOnlySelected,
   ]);
+
+  const supportedModelFields = new Set([
+    "api_base",
+    "api_version",
+    "api_key",
+    "aws_region_name",
+    "aws_access_key_id",
+    "aws_secret_access_key",
+    "aws_session_token",
+  ]);
+  const allFields = isSemantierGateway
+    ? nativeFields.filter((field) => supportedModelFields.has(field.key))
+    : nativeFields;
 
   const hasApiVersionField = React.useMemo(() => allFields.some((field) => field.key === "api_version"), [allFields]);
   const lastInferredApiVersionRef = React.useRef<string | null>(null);

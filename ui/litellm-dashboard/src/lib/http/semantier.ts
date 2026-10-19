@@ -68,7 +68,7 @@ const MODEL_FIELDS = new Set([
 ]);
 
 export function modelMutationBody(input: NativeModelInput) {
-  const entries = Object.entries(input.litellm_params ?? {});
+  const entries = Object.entries(input.litellm_params ?? {}).filter(([, value]) => value !== undefined && value !== "");
   const invalidReference = entries.find(
     ([key, value]) =>
       SECRET_FIELDS.has(key) &&

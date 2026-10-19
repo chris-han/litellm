@@ -207,11 +207,18 @@ export const prepareModelAddRequest = async (formValues: Record<string, any>, ac
   }
 };
 
-export const handleAddModelSubmit = async (values: any, accessToken: string, form: any, callback?: () => void) => {
+export const handleAddModelSubmit = async (
+  values: any,
+  accessToken: string,
+  form: any,
+  callback?: () => void,
+  onError?: (error: unknown) => void,
+) => {
   try {
     const deployments = await prepareModelAddRequest(values, accessToken, form);
 
     if (!deployments || deployments.length === 0) {
+      onError?.(new Error("Select at least one valid model mapping"));
       return; // Exit if preparation failed or no deployments
     }
 
@@ -231,6 +238,7 @@ export const handleAddModelSubmit = async (values: any, accessToken: string, for
     callback && callback();
     form.resetFields();
   } catch (error) {
+    onError?.(error);
     toast.fromError("Failed to add model: " + error);
   }
 };
