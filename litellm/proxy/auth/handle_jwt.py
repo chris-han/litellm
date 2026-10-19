@@ -115,6 +115,7 @@ STALE_CACHE_KEY_PREFIX: Final = "litellm_stale_"
 STALE_WRITTEN_AT_CACHE_KEY_PREFIX: Final = "litellm_stale_written_at_"
 UNREACHABLE_CACHE_KEY_PREFIX: Final = "litellm_jwks_unreachable_"
 _CACHED_VALUE: Final = TypeAdapter(object)
+_OIDC_USERINFO: Final = TypeAdapter(dict[str, object])
 
 _CachedValueT = TypeVar("_CachedValueT", bound=JWKKeyValue | str)
 
@@ -1053,9 +1054,10 @@ class JWTHandler:
 
         # Check cache first
         cache_key: Final = f"oidc_userinfo_{hashlib.sha256(token.encode()).hexdigest()}"
-        cached_userinfo: Final = await self.user_api_key_cache.async_get_cache(cache_key)
+        cached_userinfo_value: Final = await self.user_api_key_cache.async_get_cache(cache_key)
 
-        if cached_userinfo is not None:
+        if cached_userinfo_value is not None:
+            cached_userinfo: Final = _OIDC_USERINFO.validate_python(cached_userinfo_value, strict=True)
             verbose_proxy_logger.debug("Returning cached OIDC UserInfo")
             return cached_userinfo
 
