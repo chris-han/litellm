@@ -622,6 +622,14 @@ class MaskedHTTPStatusError(httpx.HTTPStatusError):
         self.status_code = original_error.response.status_code
 
 
+_semantier_async_transport_factory: Callable[[], httpx.AsyncBaseTransport] | None = None
+
+
+def configure_semantier_async_transport(factory: Callable[[], httpx.AsyncBaseTransport]) -> None:
+    global _semantier_async_transport_factory
+    _semantier_async_transport_factory = factory
+
+
 class AsyncHTTPHandler:
     def __init__(
         self,
@@ -638,7 +646,9 @@ class AsyncHTTPHandler:
         self.event_hooks = event_hooks
         self.ssl_verify = ssl_verify
         self.shared_session = shared_session
-        self.transport = transport
+        self.transport = transport if transport is not None else (
+            _semantier_async_transport_factory() if _semantier_async_transport_factory is not None else None
+        )
         self.follow_redirects = follow_redirects
         self._owns_client = True
         self._client = self.create_client(
