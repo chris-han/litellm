@@ -13,9 +13,9 @@ import { Toaster } from "@/components/ui/sonner";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "LiteLLM Dashboard",
+  title: process.env.NEXT_PUBLIC_SEMANTIER_GATEWAY === "1" ? "Semantier Model Gateway" : "LiteLLM Dashboard",
   description: "LiteLLM Proxy Admin UI",
-  icons: { icon: "/get_favicon" },
+  icons: { icon: process.env.NEXT_PUBLIC_SEMANTIER_GATEWAY === "1" ? "/ui/semantier.svg" : "/get_favicon" },
 };
 
 export default function RootLayout({

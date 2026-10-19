@@ -1,3 +1,4 @@
+import { isSemantierGateway } from "@/lib/http/semantier";
 import { useQuery, useInfiniteQuery, useQueryClient, UseQueryResult } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { createQueryKeys } from "../common/queryKeysFactory";
@@ -46,10 +47,11 @@ export const useModelsInfo = (
   wildcardOnly: boolean = false,
   blocked?: boolean,
 ) => {
-  const { accessToken, userId, userRole } = useAuthorized();
+  const { accessToken, userId, userRole, organizationId } = useAuthorized();
   return useQuery<PaginatedModelInfoResponse>({
     queryKey: modelKeys.list({
       filters: {
+        ...(organizationId && { organizationId }),
         ...(userId && { userId }),
         ...(userRole && { userRole }),
         page,
@@ -87,7 +89,7 @@ export const useModelsInfo = (
         wildcardOnly,
         blocked,
       ),
-    enabled: Boolean(accessToken && userId && userRole),
+    enabled: Boolean((isSemantierGateway || accessToken) && userId && userRole),
   });
 };
 

@@ -1,5 +1,7 @@
 "use client";
 
+import { isSemantierGateway } from "@/lib/http/semantier";
+
 import { useMemo, useState } from "react";
 import { RefreshCw } from "lucide-react";
 import { parseAsString, useQueryStates } from "nuqs";
@@ -117,20 +119,23 @@ export default function ModelsAndEndpointsPage() {
     ) !== "forbidden";
 
   const visibleSlugs = useMemo<Array<"" | ModelTabSlug>>(
-    () => [
-      "",
-      ...(canCreate ? (["add"] as const) : []),
-      ...(isAdmin || canViewAutoRouters ? (["auto-routers"] as const) : []),
-      // effectiveSessionRole reports proxy_admin_viewer as "Admin", so isAdmin alone would show a
-      // viewer these write-only panels; only the raw-role isViewOnly separates them. Health Status
-      // stays: it is the bucket's one read view, and viewers keep read parity with admins.
-      ...(!isViewOnly && (isAdmin || isInternalUser) ? (["llm-credentials"] as const) : []),
-      ...(isAdmin && !isViewOnly ? (["pass-through"] as const) : []),
-      ...(isAdmin ? (["health"] as const) : []),
-      ...(isAdmin && !isViewOnly
-        ? (["retry-settings", "model-group-alias", "access-group-budgets", "price-data"] as const)
-        : []),
-    ],
+    () =>
+      isSemantierGateway
+        ? ["", ...(canCreate ? ["add" as const] : [])]
+        : [
+            "",
+            ...(canCreate ? (["add"] as const) : []),
+            ...(isAdmin || canViewAutoRouters ? (["auto-routers"] as const) : []),
+            // effectiveSessionRole reports proxy_admin_viewer as "Admin", so isAdmin alone would show a
+            // viewer these write-only panels; only the raw-role isViewOnly separates them. Health Status
+            // stays: it is the bucket's one read view, and viewers keep read parity with admins.
+            ...(!isViewOnly && (isAdmin || isInternalUser) ? (["llm-credentials"] as const) : []),
+            ...(isAdmin && !isViewOnly ? (["pass-through"] as const) : []),
+            ...(isAdmin ? (["health"] as const) : []),
+            ...(isAdmin && !isViewOnly
+              ? (["retry-settings", "model-group-alias", "access-group-budgets", "price-data"] as const)
+              : []),
+          ],
     [canCreate, canViewAutoRouters, isAdmin, isInternalUser, isViewOnly],
   );
 
@@ -166,7 +171,7 @@ export default function ModelsAndEndpointsPage() {
 
   const invalidateModels = () => queryClient.invalidateQueries({ queryKey: ["models", "list"] });
 
-  if (teamId) {
+  if (teamId && !isSemantierGateway) {
     return (
       <div className="w-full h-full">
         <TeamInfoView
@@ -191,7 +196,11 @@ export default function ModelsAndEndpointsPage() {
           <div>
             <h2 className="text-lg font-semibold">Model Management</h2>
             {isAdmin ? (
-              <p className="text-sm text-muted-foreground">Add and manage models for the proxy</p>
+              <p className="text-sm text-muted-foreground">
+                {isSemantierGateway
+                  ? "Manage organization deployments. Native catalog rates are operational USD estimates. Customer tariffs are pinned in Usage evidence."
+                  : "Add and manage models for the proxy"}
+              </p>
             ) : (
               <p className="text-sm text-muted-foreground">
                 View your models and manage routers for teams that allow it.
@@ -200,7 +209,7 @@ export default function ModelsAndEndpointsPage() {
           </div>
         </div>
 
-        {!isViewOnly && <DecisionModelsBanner />}
+        {!isSemantierGateway && !isViewOnly && <DecisionModelsBanner />}
 
         {modelId ? (
           <ModelInfoView
@@ -209,7 +218,7 @@ export default function ModelsAndEndpointsPage() {
             accessToken={accessToken}
             userID={userID}
             userRole={userRole}
-            isViewOnly={isViewOnly}
+            isViewOnly={isViewOnly || isSemantierGateway}
             onModelUpdate={invalidateModels}
             modelAccessGroups={availableModelAccessGroups}
           />

@@ -1,5 +1,7 @@
 "use client";
 
+import { isSemantierGateway } from "@/lib/http/semantier";
+import { SemantierSessionProvider } from "@/components/semantier/SemantierSession";
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { jwtDecode } from "jwt-decode";
 import { clearTokenCookies, getCookie } from "@/utils/cookieUtils";
@@ -37,7 +39,7 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+function NativeAuthProvider({ children }: { children: React.ReactNode }) {
   const [authLoading, setAuthLoading] = useState(true);
   const [token, setToken] = useState<string | null>(null);
   const [userID, setUserID] = useState<string | null>(null);
@@ -158,4 +160,12 @@ export function useAuth(): AuthContextValue {
     throw new Error("useAuth must be used within an AuthProvider");
   }
   return ctx;
+}
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  return isSemantierGateway ? (
+    <SemantierSessionProvider>{children}</SemantierSessionProvider>
+  ) : (
+    <NativeAuthProvider>{children}</NativeAuthProvider>
+  );
 }

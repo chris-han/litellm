@@ -1,5 +1,8 @@
 "use client";
 
+import { isSemantierGateway } from "@/lib/http/semantier";
+import { SemantierKeys } from "@/components/semantier/SemantierKeys";
+
 import { Page } from "@/components/shared/Page";
 import { teamListCall as v2TeamListCall } from "@/app/(dashboard)/hooks/teams/useTeams";
 import useAuthorized from "@/app/(dashboard)/hooks/useAuthorized";
@@ -18,7 +21,7 @@ const CREATE_KEY_URL_PARAMS = {
   key_type: parseAsStringLiteral(["default", "llm_api", "management"] as const),
 };
 
-export default function ApiKeysDashboard() {
+function NativeApiKeysDashboard() {
   const { userId: userID, userRole, accessToken, isViewOnly } = useAuthorized();
   const [{ create, owned_by, team_id, key_alias, models, key_type }] = useQueryStates(CREATE_KEY_URL_PARAMS);
 
@@ -81,4 +84,8 @@ export default function ApiKeysDashboard() {
       />
     </Page>
   );
+}
+
+export default function ApiKeysDashboard() {
+  return isSemantierGateway ? <SemantierKeys /> : <NativeApiKeysDashboard />;
 }

@@ -1,3 +1,4 @@
+import { isSemantierGateway, semantierApi, modelMutationBody } from "@/lib/http/semantier";
 // Shared date formatter for daily activity endpoints
 export const formatDate = (date: Date) => {
   const year = date.getFullYear();
@@ -451,6 +452,7 @@ export const handleError = async (errorData: string | any) => {
 };
 
 export const getProviderCreateMetadata = async (): Promise<ProviderCreateInfo[]> => {
+  if (isSemantierGateway) return semantierApi.get("/api/admin/model-gateway/provider-fields");
   /**
    * Fetch provider credential field metadata from the proxy's public endpoint.
    * This is used by the UI to dynamically render provider-specific credential fields.
@@ -613,6 +615,7 @@ export const getOpenAPISchema = async () => {
 };
 
 export const modelCostMap = async (catalogOnly = false) => {
+  if (isSemantierGateway) return semantierApi.get("/api/admin/model-gateway/model-cost-map");
   try {
     const path = catalogOnly ? "/public/litellm_model_cost_map?catalog_only=true" : "/public/litellm_model_cost_map";
     const url = proxyBaseUrl ? `${proxyBaseUrl}${path}` : path;
@@ -738,6 +741,8 @@ export const getModelCostMapReloadStatus = async (accessToken: string) => {
   }
 };
 export const modelCreateCall = async (accessToken: string, formValues: Model) => {
+  if (isSemantierGateway)
+    return semantierApi.post("/api/admin/model-gateway/models", { body: modelMutationBody(formValues) });
   try {
     const data = await apiClient.post(`/model/new`, {
       accessToken,
@@ -760,6 +765,7 @@ export const modelCreateCall = async (accessToken: string, formValues: Model) =>
 };
 
 export const modelDeleteCall = async (accessToken: string, model_id: string) => {
+  if (isSemantierGateway) return semantierApi.delete(`/api/admin/model-gateway/models/${encodeURIComponent(model_id)}`);
   try {
     const data = await apiClient.post(`/model/delete`, {
       accessToken,
@@ -1606,6 +1612,39 @@ export const modelInfoCall = async (
   wildcardOnly?: boolean,
   blocked?: boolean,
 ) => {
+  if (isSemantierGateway) {
+    const response = await semantierApi.get<{
+      data: Array<{
+        model_name: string;
+        litellm_params: { model?: string };
+        model_info: { id?: string; blocked?: boolean };
+      }>;
+    }>("/api/admin/model-gateway/models");
+    const matches = response.data.filter(
+      (row) =>
+        (!modelId || row.model_info.id === modelId) &&
+        (!modelName || row.model_name === modelName) &&
+        (!search ||
+          `${row.model_name} ${row.litellm_params.model ?? ""}`.toLowerCase().includes(search.toLowerCase())) &&
+        (blocked === undefined || Boolean(row.model_info.blocked) === blocked),
+    );
+    const sorted = sortBy
+      ? [...matches].sort((a, b) => {
+          const value =
+            sortBy === "model_name"
+              ? a.model_name.localeCompare(b.model_name)
+              : String(a.model_info.id).localeCompare(String(b.model_info.id));
+          return sortOrder === "desc" ? -value : value;
+        })
+      : matches;
+    return {
+      data: sorted.slice((page - 1) * size, page * size),
+      total_count: matches.length,
+      current_page: page,
+      total_pages: Math.ceil(matches.length / size),
+      size,
+    };
+  }
   /**
    * Get all models on proxy
    */
@@ -2849,6 +2888,15 @@ export const modelPatchUpdateCall = async (
   formValues: Record<string, any>, // Assuming formValues is an object
   modelId: string,
 ) => {
+  if (isSemantierGateway) {
+    if (typeof formValues.blocked === "boolean")
+      return semantierApi.post(
+        `/api/admin/model-gateway/models/${encodeURIComponent(modelId)}/${formValues.blocked ? "block" : "unblock"}`,
+      );
+    return semantierApi.post(`/api/admin/model-gateway/models/${encodeURIComponent(modelId)}/update`, {
+      body: modelMutationBody(formValues),
+    });
+  }
   try {
     // Intentionally not logging the payload: it can contain freshly-entered
     // provider secrets (api_key, vertex_credentials, AWS creds).

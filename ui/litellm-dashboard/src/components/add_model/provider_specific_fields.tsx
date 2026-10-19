@@ -1,3 +1,5 @@
+import { isSemantierGateway } from "@/lib/http/semantier";
+import useAuthorized from "@/app/(dashboard)/hooks/useAuthorized";
 import { useProviderFields } from "@/app/(dashboard)/hooks/providers/useProviderFields";
 import { PasswordInput } from "@/components/shared/PasswordInput";
 import { Input } from "@/components/ui/input";
@@ -97,6 +99,7 @@ const ProviderSpecificFieldsContent: React.FC<ProviderSpecificFieldsProps> = ({
   onAuthTypeChange,
   fieldValidators,
 }) => {
+  const { providerCredentialPrefix } = useAuthorized();
   const selectedProviderEnum = Providers[selectedProvider as keyof typeof Providers] as Providers;
   const form = useFormContext<MountedFormValues>();
   const authTypes = authTypesFor(selectedProvider);
@@ -386,46 +389,70 @@ const ProviderSpecificFieldsContent: React.FC<ProviderSpecificFieldsProps> = ({
           {loadError instanceof Error ? loadError.message : "Failed to load provider credential fields"}
         </p>
       )}
-      {allFields.map((field) => (
-        <React.Fragment key={`${selectedProvider}:${field.key}`}>
-          <MountedFormField
-            label={field.tooltip ? labelWithHint(field.label, field.tooltip) : field.label}
-            name={field.key}
-            required={field.required}
-            rules={{
-              validate: {
-                ...(field.required ? { required: requiredRule("Required") } : {}),
-                ...(fieldValidators?.[field.key] ? { provider: fieldValidators[field.key] } : {}),
-              },
-            }}
-            className={field.key === "vertex_credentials" ? "mb-0" : "mb-4"}
-          >
-            {(control) => renderFieldControl(field, control)}
-          </MountedFormField>
+      {allFields.map((original) => {
+        const secretReference =
+          isSemantierGateway &&
+          ["api_key", "aws_access_key_id", "aws_secret_access_key", "aws_session_token"].includes(original.key);
+        const field = secretReference
+          ? {
+              ...original,
+              label: `${original.label} server reference`,
+              tooltip:
+                "Use a named private-server environment reference. Do not enter a provider secret in the browser.",
+              placeholder: `${providerCredentialPrefix ?? "os.environ/SEMANTIER_PROVIDER_<ORG>_"}${original.key.toUpperCase()}`,
+              type: "text" as const,
+            }
+          : original;
+        return (
+          <React.Fragment key={`${selectedProvider}:${field.key}`}>
+            <MountedFormField
+              label={field.tooltip ? labelWithHint(field.label, field.tooltip) : field.label}
+              name={field.key}
+              required={field.required}
+              rules={{
+                validate: {
+                  ...(field.required ? { required: requiredRule("Required") } : {}),
+                  ...(secretReference
+                    ? {
+                        reference: (value: unknown) =>
+                          !value ||
+                          (typeof value === "string" &&
+                            value.startsWith(providerCredentialPrefix ?? "os.environ/SEMANTIER_PROVIDER_")) ||
+                          "Use an organization-scoped server environment reference",
+                      }
+                    : {}),
+                  ...(fieldValidators?.[field.key] ? { provider: fieldValidators[field.key] } : {}),
+                },
+              }}
+              className={field.key === "vertex_credentials" ? "mb-0" : "mb-4"}
+            >
+              {(control) => renderFieldControl(field, control)}
+            </MountedFormField>
 
-          {/* Special case for Vertex Credentials help text */}
-          {field.key === "vertex_credentials" && (
-            <p className="text-sm mb-3 mt-1">Give a gcp service account(.json file)</p>
-          )}
+            {/* Special case for Vertex Credentials help text */}
+            {field.key === "vertex_credentials" && (
+              <p className="text-sm mb-3 mt-1">Give a gcp service account(.json file)</p>
+            )}
 
-          {/* Special case for Azure Base Model help text */}
-          {field.key === "base_model" && (
-            <div className="grid grid-cols-24">
-              <p className="col-start-11 col-span-10 text-sm mb-2">
-                The actual model your azure deployment uses. Used for accurate cost tracking. Select name from{" "}
-                <a
-                  href="https://github.com/BerriAI/litellm/blob/main/model_prices_and_context_window.json"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary underline-offset-4 hover:underline"
-                >
-                  here
-                </a>
-              </p>
-            </div>
-          )}
-        </React.Fragment>
-      ))}
+            {/* Special case for Azure Base Model help text */}
+            {field.key === "base_model" && (
+              <div className="grid grid-cols-24">
+                <p className="col-start-11 col-span-10 text-sm mb-2">
+                  The actual model your azure deployment uses. Used for accurate cost tracking. Select name from{" "}
+                  <a
+                    href="https://github.com/BerriAI/litellm/blob/main/model_prices_and_context_window.json"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary underline-offset-4 hover:underline"
+                  >
+                    here
+                  </a>
+                </p>
+              </div>
+            )}
+          </React.Fragment>
+        );
+      })}
     </>
   );
 };

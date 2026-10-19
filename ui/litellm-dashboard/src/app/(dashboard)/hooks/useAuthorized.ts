@@ -1,5 +1,8 @@
 "use client";
 
+import { isSemantierGateway } from "@/lib/http/semantier";
+import { useSemantierSession } from "@/components/semantier/SemantierSession";
+
 import { clearTokenCookies, getCookie } from "@/utils/cookieUtils";
 import { checkTokenValidity, decodeToken } from "@/utils/jwtUtils";
 import { useEffect, useMemo } from "react";
@@ -8,7 +11,7 @@ import { useCurrentUser } from "./currentUser/useCurrentUser";
 import { redirectToLogin } from "./redirectToLogin";
 import { useUIConfig } from "./uiConfig/useUIConfig";
 
-const useAuthorized = () => {
+const useNativeAuthorized = () => {
   const { data: uiConfig, isLoading: isUIConfigLoading } = useUIConfig();
 
   const token = typeof document !== "undefined" ? getCookie("token") : null;
@@ -43,6 +46,8 @@ const useAuthorized = () => {
     accessToken: decoded?.key ?? null,
     userId: currentUser?.user_id ?? null,
     userEmail: currentUser?.user_email ?? null,
+    organizationId: null as string | null,
+    providerCredentialPrefix: null as string | null,
     userRole: effectiveSessionRole(serverRole),
     userRoleLabel: formatUserRole(serverRole),
     isViewOnly: isViewOnlySessionRole(serverRole),
@@ -54,4 +59,27 @@ const useAuthorized = () => {
   };
 };
 
+function useSemantierAuthorized() {
+  const session = useSemantierSession();
+  return {
+    isLoading: false,
+    isAuthorized: true,
+    token: null,
+    accessToken: null,
+    userId: session.user_id,
+    organizationId: session.organization_id,
+    providerCredentialPrefix: session.provider_credential_prefix ?? null,
+    userEmail: null,
+    userRole: session.permissions.includes("provider_credentials:manage") ? "Admin" : "Admin Viewer",
+    userRoleLabel: "Semantier operator",
+    isViewOnly: !session.permissions.includes("provider_credentials:manage"),
+    premiumUser: false,
+    disabledPersonalKeyCreation: true,
+    loginMethod: "semantier_cookie",
+    showSSOBanner: false,
+    passwordResetRequired: false,
+  };
+}
+
+const useAuthorized = isSemantierGateway ? useSemantierAuthorized : useNativeAuthorized;
 export default useAuthorized;

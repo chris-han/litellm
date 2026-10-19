@@ -1,5 +1,7 @@
 "use client";
 
+import { isSemantierGateway } from "@/lib/http/semantier";
+
 import { useModelCostMap } from "@/app/(dashboard)/hooks/models/useModelCostMap";
 import { useTeams } from "@/app/(dashboard)/hooks/teams/useTeams";
 import { useCredentials } from "@/app/(dashboard)/hooks/credentials/useCredentials";
@@ -259,10 +261,10 @@ const AllModelsTab = ({
   }, [deleteModalModelId, modelData]);
 
   const handleDeleteModel = async () => {
-    if (!accessToken || !deleteModalModelId) return;
+    if ((!isSemantierGateway && !accessToken) || !deleteModalModelId) return;
     try {
       setDeleteLoading(true);
-      await modelDeleteCall(accessToken, deleteModalModelId);
+      await modelDeleteCall(accessToken ?? "", deleteModalModelId);
       toast.success("Model deleted successfully");
       queryClient.invalidateQueries({ queryKey: ["models", "list"] });
       refetchModels();
@@ -277,10 +279,10 @@ const AllModelsTab = ({
 
   const handleTogglePause = useCallback(
     async (modelId: string, blocked: boolean) => {
-      if (!accessToken) return;
+      if (!isSemantierGateway && !accessToken) return;
       try {
         setPausingModelId(modelId);
-        await modelPatchUpdateCall(accessToken, { blocked }, modelId);
+        await modelPatchUpdateCall(accessToken ?? "", { blocked }, modelId);
         toast.success(blocked ? "Model paused" : "Model resumed");
         // invalidateQueries already schedules a refetch for active observers
         // on this key — no need to also call refetchModels() (would double-fetch).
@@ -403,11 +405,13 @@ const AllModelsTab = ({
         onOk={handleDeleteModel}
         confirmLoading={deleteLoading}
       />
-      <ModelSettingsModal
-        isVisible={isModelSettingsModalVisible}
-        onCancel={() => setIsModelSettingsModalVisible(false)}
-        onSuccess={() => setIsModelSettingsModalVisible(false)}
-      />
+      {!isSemantierGateway && (
+        <ModelSettingsModal
+          isVisible={isModelSettingsModalVisible}
+          onCancel={() => setIsModelSettingsModalVisible(false)}
+          onSuccess={() => setIsModelSettingsModalVisible(false)}
+        />
+      )}
     </div>
   );
 };

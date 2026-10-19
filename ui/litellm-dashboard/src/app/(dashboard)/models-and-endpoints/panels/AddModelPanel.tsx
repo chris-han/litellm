@@ -1,5 +1,7 @@
 "use client";
 
+import { isSemantierGateway } from "@/lib/http/semantier";
+
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { parseAsString, useQueryStates } from "nuqs";
@@ -31,7 +33,9 @@ export default function AddModelPanel() {
   const { data: modelCostMapData } = useModelCostMap(true, true);
   const { data: credentialsResponse } = useCredentials();
   const { data: teams } = useTeams();
-  const [selectedProvider, setSelectedProvider] = useState<string | null>(Providers.Anthropic);
+  const [selectedProvider, setSelectedProvider] = useState<string | null>(
+    isSemantierGateway ? Providers.Azure : Providers.Anthropic,
+  );
   const [{ provider: prefillProviderSlug, litellm_model: prefillModel }, setPrefillParams] =
     useQueryStates(PREFILL_URL_PARAMS);
   const { data: providerMetadata } = useProviderFields();

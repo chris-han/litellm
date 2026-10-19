@@ -1,3 +1,4 @@
+import { isSemantierGateway } from "@/lib/http/semantier";
 import { useProviderFields } from "@/app/(dashboard)/hooks/providers/useProviderFields";
 import { useGuardrails } from "@/app/(dashboard)/hooks/guardrails/useGuardrails";
 import { useTags } from "@/app/(dashboard)/hooks/tags/useTags";
@@ -108,10 +109,10 @@ const AddModelForm: React.FC<AddModelFormProps> = ({
   const [isCredentialModalOpen, setIsCredentialModalOpen] = useState(false);
   const [credentialModalAuthTypeId, setCredentialModalAuthTypeId] = useState<string | undefined>();
   const [selectedAuthTypeId, setSelectedAuthTypeId] = useState("");
-  const canCreateCredential = isProxyAdminRole(userRole ?? "");
+  const canCreateCredential = !isSemantierGateway && isProxyAdminRole(userRole ?? "");
   const [isFederatedCredentialModalOpen, setIsFederatedCredentialModalOpen] = useState(false);
   const canCreateFederatedCredential =
-    isProxyAdminRole(userRole ?? "") && federatedProviderOf(selectedProvider) !== null;
+    !isSemantierGateway && isProxyAdminRole(userRole ?? "") && federatedProviderOf(selectedProvider) !== null;
   const selectedAuthType = authTypesFor(selectedProvider).find(({ id }) => id === selectedAuthTypeId);
 
   const handleCreateCredential = async (submission: CredentialSubmission) => {
@@ -163,7 +164,7 @@ const AddModelForm: React.FC<AddModelFormProps> = ({
       const response = await modelAvailableCall(accessToken, "", "", false, null, true, true);
       setModelAccessGroups(response["data"].map((model: any) => model["id"]));
     };
-    fetchModelAccessGroups();
+    if (!isSemantierGateway) fetchModelAccessGroups();
   }, [accessToken]);
 
   const sortedProviderMetadata: ProviderCreateInfo[] = useMemo(() => {
@@ -294,69 +295,76 @@ const AddModelForm: React.FC<AddModelFormProps> = ({
                       <ConditionalPublicModelName />
 
                       {/* Select Mode */}
-                      <MountedFormField label="Mode" name="mode" className="mb-1">
-                        {(control) => (
-                          <Select
-                            items={TEST_MODES}
-                            value={(control.value as string | undefined) ?? null}
-                            onValueChange={(value: string | null) => {
-                              control.onChange(value);
-                              setTestMode(value ?? "");
-                            }}
-                          >
-                            <SelectTrigger id={control.id} className="w-full" aria-label="Mode">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {TEST_MODES.map((mode) => (
-                                <SelectItem key={mode.value} value={mode.value}>
-                                  {mode.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        )}
-                      </MountedFormField>
-                      <div className="grid grid-cols-12">
-                        <div className="col-span-5" />
-                        <div className="col-span-5">
-                          <p className="text-sm mb-5 mt-1">
-                            <strong>Optional</strong> - LiteLLM endpoint to use when health checking this model{" "}
-                            <a
-                              href="https://docs.litellm.ai/docs/proxy/health#health"
-                              target="_blank"
-                              rel="noreferrer"
-                              className="text-primary hover:underline"
-                            >
-                              Learn more
-                            </a>
-                          </p>
-                        </div>
-                      </div>
-
+                      {!isSemantierGateway && (
+                        <>
+                          <MountedFormField label="Mode" name="mode" className="mb-1">
+                            {(control) => (
+                              <Select
+                                items={TEST_MODES}
+                                value={(control.value as string | undefined) ?? null}
+                                onValueChange={(value: string | null) => {
+                                  control.onChange(value);
+                                  setTestMode(value ?? "");
+                                }}
+                              >
+                                <SelectTrigger id={control.id} className="w-full" aria-label="Mode">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {TEST_MODES.map((mode) => (
+                                    <SelectItem key={mode.value} value={mode.value}>
+                                      {mode.label}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            )}
+                          </MountedFormField>
+                          <div className="grid grid-cols-12">
+                            <div className="col-span-5" />
+                            <div className="col-span-5">
+                              <p className="text-sm mb-5 mt-1">
+                                <strong>Optional</strong> - LiteLLM endpoint to use when health checking this model{" "}
+                                <a
+                                  href="https://docs.litellm.ai/docs/proxy/health#health"
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="text-primary hover:underline"
+                                >
+                                  Learn more
+                                </a>
+                              </p>
+                            </div>
+                          </div>
+                        </>
+                      )}
                       {/* Credentials */}
                       <div className="mb-4">
                         <span className="text-sm text-muted-foreground">
-                          Either select existing credentials OR enter new provider credentials below
+                          {isSemantierGateway
+                            ? "Use named private-server environment references. Provider secrets stay on the server."
+                            : "Either select existing credentials OR enter new provider credentials below"}
                         </span>
                       </div>
 
-                      <MountedFormField
-                        label="Existing Credentials"
-                        name="litellm_credential_name"
-                        defaultValue={null}
-                        className="mb-4"
-                      >
-                        {(control) => (
-                          <SearchSelect
-                            inputId={control.id}
-                            placeholder="Select or search for existing credentials"
-                            options={credentialSelectOptions}
-                            value={(control.value as string | null | undefined) ?? ""}
-                            onValueChange={(value) => control.onChange(value === "" ? null : value)}
-                          />
-                        )}
-                      </MountedFormField>
+                      {!isSemantierGateway && (
+                        <MountedFormField
+                          label="Existing Credentials"
+                          name="litellm_credential_name"
+                          defaultValue={null}
+                          className="mb-4"
+                        >
+                          {(control) => (
+                            <SearchSelect
+                              inputId={control.id}
+                              placeholder="Select or search for existing credentials"
+                              options={credentialSelectOptions}
+                              value={(control.value as string | null | undefined) ?? ""}
+                              onValueChange={(value) => control.onChange(value === "" ? null : value)}
+                            />
+                          )}
+                        </MountedFormField>
+                      )}
 
                       {/* Only show provider specific fields if no credentials selected */}
                       {!selectedCredentialName && (
@@ -388,13 +396,15 @@ const AddModelForm: React.FC<AddModelFormProps> = ({
                           )}
                         </>
                       )}
-                      <div className="flex items-center my-4">
-                        <div className="grow border-t border-border"></div>
-                        <span className="px-4 text-muted-foreground text-sm">Additional Model Info Settings</span>
-                        <div className="grow border-t border-border"></div>
-                      </div>
+                      {!isSemantierGateway && (
+                        <div className="flex items-center my-4">
+                          <div className="grow border-t border-border"></div>
+                          <span className="px-4 text-muted-foreground text-sm">Additional Model Info Settings</span>
+                          <div className="grow border-t border-border"></div>
+                        </div>
+                      )}
                       {/* Team-only Model Switch - Only show for proxy admins, not team admins */}
-                      {(isAdmin || !isTeamAdmin) && (
+                      {!isSemantierGateway && (isAdmin || !isTeamAdmin) && (
                         <Field className="mb-4">
                           <FieldLabel>
                             {labelWithHint(
@@ -452,7 +462,7 @@ const AddModelForm: React.FC<AddModelFormProps> = ({
                           )}
                         </MountedFormField>
                       )}
-                      {isAdmin && (
+                      {!isSemantierGateway && isAdmin && (
                         <>
                           <MountedFormField
                             label={labelWithHint(
@@ -475,14 +485,16 @@ const AddModelForm: React.FC<AddModelFormProps> = ({
                           </MountedFormField>
                         </>
                       )}
-                      <AdvancedSettings
-                        showAdvancedSettings={showAdvancedSettings}
-                        setShowAdvancedSettings={setShowAdvancedSettings}
-                        teams={teams}
-                        guardrailsList={guardrailsList || []}
-                        tagsList={tagsList || {}}
-                        accessToken={accessToken || ""}
-                      />
+                      {!isSemantierGateway && (
+                        <AdvancedSettings
+                          showAdvancedSettings={showAdvancedSettings}
+                          setShowAdvancedSettings={setShowAdvancedSettings}
+                          teams={teams}
+                          guardrailsList={guardrailsList || []}
+                          tagsList={tagsList || {}}
+                          accessToken={accessToken || ""}
+                        />
+                      )}
                     </>
                   )}
                   <div className="flex justify-between items-center mb-4">
@@ -495,15 +507,17 @@ const AddModelForm: React.FC<AddModelFormProps> = ({
                       </a>
                     </SimpleTooltip>
                     <div className="space-x-2">
-                      <Button
-                        variant="outline"
-                        data-testid="test-connect-btn"
-                        onClick={handleTestConnection}
-                        disabled={isTestingConnection}
-                        aria-busy={isTestingConnection}
-                      >
-                        Test Connect
-                      </Button>
+                      {!isSemantierGateway && (
+                        <Button
+                          variant="outline"
+                          data-testid="test-connect-btn"
+                          onClick={handleTestConnection}
+                          disabled={isTestingConnection}
+                          aria-busy={isTestingConnection}
+                        >
+                          Test Connect
+                        </Button>
+                      )}
                       <Button data-testid="add-model-btn" type="submit">
                         Add Model
                       </Button>

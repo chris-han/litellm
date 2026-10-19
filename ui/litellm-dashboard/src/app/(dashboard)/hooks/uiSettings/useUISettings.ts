@@ -1,3 +1,4 @@
+import { isSemantierGateway } from "@/lib/http/semantier";
 import { getUiSettings } from "@/components/networking";
 import { useQuery } from "@tanstack/react-query";
 import { createQueryKeys } from "../common/queryKeysFactory";
@@ -15,6 +16,7 @@ const uiSettingsKeys = createQueryKeys("uiSettings");
  */
 export const useUISettings = (options?: { staleTime?: number; refetchInterval?: number }) => {
   return useQuery<Record<string, any>>({
+    enabled: !isSemantierGateway,
     queryKey: uiSettingsKeys.list({}),
     queryFn: async () => await getUiSettings(),
     staleTime: options?.staleTime ?? 60 * 60 * 1000, // 1 hour - data rarely changes

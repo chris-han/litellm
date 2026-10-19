@@ -1,5 +1,7 @@
 "use client";
 
+import { isSemantierGateway } from "@/lib/http/semantier";
+import { SemantierShell } from "@/components/semantier/SemantierShell";
 import React, { Suspense, useState, useRef, useEffect } from "react";
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import { DashboardHeader } from "@/components/DashboardHeader";
@@ -265,6 +267,12 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
 }
 
 export default function Layout({ children }: { children: React.ReactNode }) {
+  if (isSemantierGateway)
+    return (
+      <Suspense fallback={<LoadingScreen />}>
+        <SemantierShell>{children}</SemantierShell>
+      </Suspense>
+    );
   return (
     <Suspense fallback={<LoadingScreen />}>
       <PluginModeProviderWithAuth>
