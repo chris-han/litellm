@@ -32,21 +32,13 @@ export function SemantierSessionProvider({ children }: { children: ReactNode }) 
   const [activeScope, setActiveScope] = useState<string | null>(null);
   const query = useQuery({
     queryKey: ["semantier-context"],
-    queryFn: async ({ signal }) => {
-      try {
-        const context = await semantierApi.get<SemantierSession>("/api/admin/model-gateway/context", { signal });
-        setSemantierOrganization(context.organization_id);
-        return context;
-      } catch (error) {
-        setSemantierOrganization(null);
-        throw error;
-      }
-    },
+    queryFn: ({ signal }) => semantierApi.get<SemantierSession>("/api/admin/model-gateway/context", { signal }),
     retry: false,
     staleTime: 0,
     refetchOnWindowFocus: "always",
   });
   const session = query.isError ? null : query.data;
+  const organizationId = session?.organization_id ?? null;
   const scope = session
     ? JSON.stringify([session.user_id, session.organization_id, [...session.permissions].sort()])
     : null;
@@ -56,13 +48,14 @@ export function SemantierSessionProvider({ children }: { children: ReactNode }) 
       void client.cancelQueries({ predicate: (q) => q.queryKey[0] !== "semantier-context" }).then(() => {
         if (!current) return;
         client.removeQueries({ predicate: (q) => q.queryKey[0] !== "semantier-context" });
+        setSemantierOrganization(organizationId);
         setActiveScope(scope);
       });
       return () => {
         current = false;
       };
     }
-  }, [client, scope, activeScope]);
+  }, [client, scope, activeScope, organizationId]);
   useEffect(() => {
     const invalidate = () => {
       void client.invalidateQueries({ queryKey: ["semantier-context"] });

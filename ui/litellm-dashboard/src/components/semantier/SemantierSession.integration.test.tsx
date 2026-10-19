@@ -1,5 +1,7 @@
 import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, screen } from "@testing-library/react";
+import { useEffect } from "react";
+import { semantierApi } from "@/lib/http/semantier";
 import { renderWithProviders, testQueryClient } from "../../../tests/test-utils";
 import { SemantierSessionProvider, useSemantierSession } from "./SemantierSession";
 import ModelInfoView from "@/components/model_info_view";
@@ -45,6 +47,30 @@ afterEach(() => {
 });
 
 describe("Semantier organization and evidence wiring", () => {
+  it("keeps the old organization assertion until old scoped callbacks have unmounted", async () => {
+    let organization = "org-a";
+    const fetchImpl = vi.fn(async (url: string, _init?: RequestInit) =>
+      json(url.endsWith("/context") ? session(organization) : {}),
+    );
+    vi.stubGlobal("fetch", fetchImpl);
+    function RetiringScope() {
+      const current = useSemantierSession();
+      useEffect(() => () => {
+        void semantierApi.post("/api/billing/budget", { retiredOrganization: current.organization_id });
+      }, [current.organization_id]);
+      return <p>{current.organization_id}</p>;
+    }
+    renderWithProviders(<SemantierSessionProvider><RetiringScope /></SemantierSessionProvider>);
+    await screen.findByText("org-a");
+    organization = "org-b";
+    await act(async () => {
+      await testQueryClient.refetchQueries({ queryKey: ["semantier-context"] });
+    });
+    await screen.findByText("org-b");
+    const retired = fetchImpl.mock.calls.find(([url]) => url.endsWith("/budget"));
+    expect((retired?.[1] as RequestInit)?.headers).toMatchObject({ "X-Semantier-Organization-Id": "org-a" });
+  });
+
   it("remounts organization-bound drafts and clears data on a context switch", async () => {
     let organization = "org-a";
     vi.stubGlobal(
