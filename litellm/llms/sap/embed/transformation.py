@@ -2,13 +2,11 @@
 Translates from OpenAI's `/v1/embeddings` to IBM's `/text/embeddings` route.
 """
 
-from collections.abc import Sequence
 from functools import cached_property
 from typing import Final, Literal
 
 import httpx
-from pydantic import ConfigDict, Field, TypeAdapter, with_config
-from typing_extensions import NotRequired, ReadOnly, TypedDict
+from pydantic import Field
 
 from litellm.llms.base_llm.embedding.transformation import (
     BaseEmbeddingConfig,
@@ -21,28 +19,6 @@ from litellm.types.utils import EmbeddingResponse
 
 from ..chat.handler import GenAIHubOrchestrationError
 from ..credentials import get_token_creator
-
-
-@with_config(ConfigDict(extra="allow", strict=True))
-class _SapDeployment(TypedDict):
-    scenarioId: ReadOnly[object]
-    configurationId: ReadOnly[object]
-    deploymentUrl: ReadOnly[str]
-    createdAt: ReadOnly[str | int | float]
-
-
-@with_config(ConfigDict(extra="allow", strict=True))
-class _SapDeploymentList(TypedDict):
-    resources: ReadOnly[NotRequired[Sequence[_SapDeployment]]]
-
-
-@with_config(ConfigDict(extra="allow", strict=True))
-class _SapConfigDetails(TypedDict):
-    executableId: ReadOnly[object]
-
-
-_SAP_DEPLOYMENTS: Final = TypeAdapter(_SapDeploymentList)
-_SAP_CONFIG_DETAILS: Final = TypeAdapter(_SapConfigDetails)
 
 
 class Usage(LiteLLMBaseModel):
@@ -125,20 +101,15 @@ class GenAIHubEmbeddingConfig(BaseEmbeddingConfig):
     def deployment_url(self) -> str:
         with httpx.Client(timeout=30) as client:
             valid_deployments: Final = []
-            deployments: Final = _SAP_DEPLOYMENTS.validate_python(
-                client.get(self.base_url + "/lm/deployments", headers=self.headers).json()
-            )
+            deployments: Final = client.get(self.base_url + "/lm/deployments", headers=self.headers).json()
             for deployment in deployments.get("resources", []):
-                if deployment["scenarioId"] == "orchestration" and (
-                    _SAP_CONFIG_DETAILS.validate_python(
-                        client.get(
-                            self.base_url + f"/lm/configurations/{deployment['configurationId']}",
-                            headers=self.headers,
-                        ).json()
-                    )["executableId"]
-                    == "orchestration"
-                ):
-                    valid_deployments.append((deployment["deploymentUrl"], deployment["createdAt"]))
+                if deployment["scenarioId"] == "orchestration":
+                    config_details = client.get(
+                        self.base_url + f"/lm/configurations/{deployment['configurationId']}",
+                        headers=self.headers,
+                    ).json()
+                    if config_details["executableId"] == "orchestration":
+                        valid_deployments.append((deployment["deploymentUrl"], deployment["createdAt"]))
             return sorted(valid_deployments, key=lambda x: x[1], reverse=True)[0][0]
 
     def get_error_class(self, error_message, status_code, headers):
