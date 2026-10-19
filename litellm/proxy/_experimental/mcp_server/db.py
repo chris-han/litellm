@@ -8,8 +8,9 @@ from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING, Any, Final, Literal, Protocol, TypedDict, cast
 
 from fastapi import HTTPException
-from pydantic import ConfigDict, TypeAdapter
+from pydantic import ConfigDict, TypeAdapter, with_config
 from typing_extensions import ReadOnly
+from typing_extensions import TypedDict as ExtensionsTypedDict
 
 from litellm._logging import verbose_proxy_logger
 from litellm._uuid import uuid
@@ -235,11 +236,15 @@ class OAuthCredentialPayload(_OAuthCredentialAccessToken, total=False):
 OAuthGrantState = Literal["valid", "refreshable", "absent"]
 
 
-class _OAuthTokenRefreshResponse(TypedDict, total=False):
-    access_token: str
-    refresh_token: str
-    expires_in: int
-    scope: str
+@with_config(ConfigDict(extra="allow", strict=True))
+class _OAuthTokenRefreshResponse(ExtensionsTypedDict, total=False):
+    access_token: ReadOnly[str]
+    refresh_token: ReadOnly[str]
+    expires_in: ReadOnly[int | float | str | None]
+    scope: ReadOnly[object]
+
+
+_OAUTH_TOKEN_REFRESH_RESPONSE: Final = TypeAdapter(_OAuthTokenRefreshResponse)
 
 
 def _credential_auth_class(auth_type: str | None) -> str | None:
@@ -2107,7 +2112,7 @@ async def refresh_user_oauth_token(
             data=token_data,
         )
         response.raise_for_status()
-        body: Final[_OAuthTokenRefreshResponse] = response.json()
+        body: Final = _OAUTH_TOKEN_REFRESH_RESPONSE.validate_python(response.json())
     except Exception as exc:
         verbose_proxy_logger.warning(
             "refresh_user_oauth_token: refresh request failed for user=%s server=%s: %s",
