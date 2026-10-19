@@ -352,7 +352,15 @@ const AllModelsTab = ({
         {modelViewMode === "current_team" && (
           <div className="flex items-start gap-2 px-1 text-xs text-muted-foreground">
             <Info className="mt-0.5 size-3.5 shrink-0" />
-            {selectedTeamValue === PERSONAL_TEAM_VALUE ? (
+            {isSemantierGateway ? (
+              <span>
+                For Hermes access, create a scoped Semantier credential on the{" "}
+                <a href={uiHref("api-keys")} className="font-medium text-info hover:underline">
+                  Keys page
+                </a>
+                . Operational keys remain on the server.
+              </span>
+            ) : selectedTeamValue === PERSONAL_TEAM_VALUE ? (
               <span>
                 To access these models, create a Virtual Key without selecting a team on the{" "}
                 <a href={uiHref("api-keys")} className="font-medium text-info hover:underline">

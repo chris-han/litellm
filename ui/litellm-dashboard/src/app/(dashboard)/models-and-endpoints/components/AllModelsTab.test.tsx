@@ -8,6 +8,12 @@ import { renderWithProviders } from "../../../../../tests/test-utils";
 import AllModelsTab from "./AllModelsTab";
 import { STATUS_COLUMN_ID, toServerSortField } from "./ModelsTableColumns";
 
+const gatewayMode = vi.hoisted(() => ({ enabled: false }));
+vi.mock("@/lib/http/semantier", async (importOriginal) => ({
+  ...await importOriginal<typeof import("@/lib/http/semantier")>(),
+  get isSemantierGateway() { return gatewayMode.enabled; },
+}));
+
 const mockModelDeleteCall = vi.fn().mockResolvedValue({});
 const mockModelPatchUpdateCall = vi.fn().mockResolvedValue({});
 vi.mock("@/components/networking", () => ({
@@ -156,6 +162,7 @@ const defaultProps = {
 
 describe("AllModelsTab", () => {
   beforeEach(() => {
+    gatewayMode.enabled = false;
     vi.clearAllMocks();
     modelsInfoCalls.length = 0;
     setModelsInfo([makeRow()]);
@@ -577,6 +584,14 @@ describe("AllModelsTab", () => {
   });
 
   describe("virtual key hint", () => {
+    it("directs Semantier users to scoped credentials without native team-key guidance", () => {
+      gatewayMode.enabled = true;
+      renderWithProviders(<AllModelsTab {...defaultProps} />);
+      expect(screen.getByText(/create a scoped Semantier credential/i)).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: "Keys page" })).toHaveAttribute("href", "/ui/api-keys");
+      expect(screen.queryByText(/create a Virtual Key/i)).not.toBeInTheDocument();
+    });
+
     it("explains personal key creation while viewing current team models", () => {
       renderWithProviders(<AllModelsTab {...defaultProps} />);
 
