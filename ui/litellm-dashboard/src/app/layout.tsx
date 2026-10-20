@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { PRODUCT_NAME, PRODUCT_LOGO } from "@/lib/branding";
 import { Inter } from "next/font/google";
 import "./globals.css";
 
@@ -13,9 +14,9 @@ import { Toaster } from "@/components/ui/sonner";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: process.env.NEXT_PUBLIC_SEMANTIER_GATEWAY === "1" ? "Semantier Model Gateway" : "LiteLLM Dashboard",
-  description: "LiteLLM Proxy Admin UI",
-  icons: { icon: process.env.NEXT_PUBLIC_SEMANTIER_GATEWAY === "1" ? "/ui/semantier.svg" : "/get_favicon" },
+  title: process.env.NEXT_PUBLIC_SEMANTIER_GATEWAY === "1" ? "Semantier Model Gateway" : PRODUCT_NAME,
+  description: "Models, keys and usage for Semantier Cloud FinOps.",
+  icons: { icon: process.env.NEXT_PUBLIC_SEMANTIER_GATEWAY === "1" ? "/ui/semantier.svg" : PRODUCT_LOGO },
 };
 
 export default function RootLayout({

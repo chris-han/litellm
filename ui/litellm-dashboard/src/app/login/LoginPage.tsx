@@ -1,5 +1,6 @@
 "use client";
 
+import { PRODUCT_NAME, PRODUCT_LOGO } from "@/lib/branding";
 import { useLogin } from "@/app/(dashboard)/hooks/login/useLogin";
 import { useUIConfig } from "@/app/(dashboard)/hooks/uiConfig/useUIConfig";
 import LoadingScreen from "@/components/common_components/LoadingScreen";
@@ -198,7 +199,10 @@ function LoginPageContent() {
           <CardContent>
             <div className="flex w-full flex-col gap-4">
               <div className="text-center">
-                <h2 className="text-3xl font-semibold text-foreground">🚅 LiteLLM</h2>
+                <div className="flex items-center justify-center gap-3">
+                  <img src={PRODUCT_LOGO} alt="Semantier" width={40} height={40} className="shrink-0" />
+                  <h2 className="text-left text-2xl font-semibold leading-tight text-foreground">{PRODUCT_NAME}</h2>
+                </div>
               </div>
 
               <Alert variant="warning">
@@ -228,12 +232,15 @@ function LoginPageContent() {
           <TooltipProvider>
             <div className="flex w-full flex-col gap-4">
               <div className="text-center">
-                <h2 className="text-3xl font-semibold text-foreground">🚅 LiteLLM</h2>
+                <div className="flex items-center justify-center gap-3">
+                  <img src={PRODUCT_LOGO} alt="Semantier" width={40} height={40} className="shrink-0" />
+                  <h2 className="text-left text-2xl font-semibold leading-tight text-foreground">{PRODUCT_NAME}</h2>
+                </div>
               </div>
 
               <div className="text-center">
                 <h3 className="text-2xl font-semibold text-foreground">Login</h3>
-                <p className="text-sm text-muted-foreground">Access your LiteLLM Admin UI.</p>
+                <p className="text-sm text-muted-foreground">Access your Semantier Cloud FinOps dashboard.</p>
               </div>
 
               {!uiConfig?.hide_default_credentials_hint && (

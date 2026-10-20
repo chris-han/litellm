@@ -154,18 +154,20 @@ describe("Sidebar (leftnav)", () => {
   it("should link the logo to the UI home route rather than the proxy origin", () => {
     renderWithProviders(<Sidebar {...defaultProps} />);
 
-    expect(screen.getByRole("link", { name: /litellm home/i })).toHaveAttribute("href", "/ui");
+    expect(screen.getByRole("link", { name: /semantier cloud finops home/i })).toHaveAttribute("href", "/ui");
   });
 
   it("pairs the logo with a dark-mode variant that swaps on the dark class", () => {
     renderWithProviders(<Sidebar {...defaultProps} />);
 
-    const [light, dark] = Array.from(screen.getByRole("link", { name: /litellm home/i }).querySelectorAll("img"));
+    const [light, dark] = Array.from(
+      screen.getByRole("link", { name: /semantier cloud finops home/i }).querySelectorAll("img"),
+    );
     const classesOf = (el: Element) => new Set(el.className.split(/\s+/));
 
     const lightSrc = light.getAttribute("src") ?? "";
-    expect(light).toHaveAttribute("src", expect.stringMatching(/\/get_image$/));
-    expect(dark).toHaveAttribute("src", `${lightSrc}?theme=dark`);
+    expect(light).toHaveAttribute("src", "/ui/semantier-cloud-finops.svg");
+    expect(dark).toHaveAttribute("src", lightSrc);
     expect(classesOf(light).has("dark:hidden")).toBe(true);
     expect(classesOf(light).has("hidden")).toBe(false);
     expect(classesOf(dark).has("hidden")).toBe(true);
@@ -173,23 +175,23 @@ describe("Sidebar (leftnav)", () => {
   });
 
   const collapsedLogos = () => {
-    const home = within(screen.getByRole("link", { name: /litellm home/i }));
+    const home = within(screen.getByRole("link", { name: /semantier cloud finops home/i }));
     return {
-      light: home.getByRole("img", { name: "LiteLLM" }),
+      light: home.getByRole("img", { name: "Semantier" }),
       dark: home.getByRole("presentation", { hidden: true }),
     };
   };
 
-  it("requests the bundled monogram for both themes when collapsed", () => {
+  it("uses the Semantier mark for both themes when collapsed", () => {
     renderWithProviders(<Sidebar collapsed />);
 
     const { light, dark } = collapsedLogos();
 
-    expect(light).toHaveAttribute("src", expect.stringMatching(/\/get_image\?variant=monogram$/));
-    expect(dark).toHaveAttribute("src", expect.stringMatching(/\/get_image\?theme=dark&variant=monogram$/));
+    expect(light).toHaveAttribute("src", "/ui/semantier-cloud-finops.svg");
+    expect(dark).toHaveAttribute("src", "/ui/semantier-cloud-finops.svg");
   });
 
-  it("keeps a configured custom logo when collapsed instead of the LiteLLM monogram", () => {
+  it("keeps a configured custom logo when collapsed instead of the Semantier mark", () => {
     mockUseThemeImpl = () => ({
       ...unbrandedTheme(),
       logoUrl: "https://cdn.example.com/logo.png",
@@ -211,7 +213,9 @@ describe("Sidebar (leftnav)", () => {
     });
     renderWithProviders(<Sidebar {...defaultProps} />);
 
-    const [light, dark] = Array.from(screen.getByRole("link", { name: /litellm home/i }).querySelectorAll("img"));
+    const [light, dark] = Array.from(
+      screen.getByRole("link", { name: /semantier cloud finops home/i }).querySelectorAll("img"),
+    );
 
     expect(light).toHaveAttribute("src", "https://cdn.example.com/logo.png");
     expect(dark).toHaveAttribute("src", "https://cdn.example.com/logo-dark.png");
@@ -221,7 +225,9 @@ describe("Sidebar (leftnav)", () => {
     mockUseThemeImpl = () => ({ ...unbrandedTheme(), logoUrl: "https://cdn.example.com/logo.png" });
     renderWithProviders(<Sidebar {...defaultProps} />);
 
-    const [light, dark] = Array.from(screen.getByRole("link", { name: /litellm home/i }).querySelectorAll("img"));
+    const [light, dark] = Array.from(
+      screen.getByRole("link", { name: /semantier cloud finops home/i }).querySelectorAll("img"),
+    );
 
     expect(light).toHaveAttribute("src", "https://cdn.example.com/logo.png");
     expect(dark).toHaveAttribute("src", "https://cdn.example.com/logo.png");
@@ -235,7 +241,9 @@ describe("Sidebar (leftnav)", () => {
     });
     renderWithProviders(<Sidebar {...defaultProps} />);
 
-    const [, dark] = Array.from(screen.getByRole("link", { name: /litellm home/i }).querySelectorAll("img"));
+    const [, dark] = Array.from(
+      screen.getByRole("link", { name: /semantier cloud finops home/i }).querySelectorAll("img"),
+    );
     expect(dark).toHaveAttribute("src", "https://cdn.example.com/gone.png");
 
     fireEvent.error(dark);

@@ -95,6 +95,8 @@ describe("LoginPage", () => {
 
     await waitFor(() => {
       expect(screen.getByRole("heading", { name: "Login" })).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: "Semantier Cloud FinOps" })).toBeInTheDocument();
+      expect(screen.getByRole("img", { name: "Semantier" })).toHaveAttribute("src", "/ui/semantier-cloud-finops.svg");
     });
   });
 
