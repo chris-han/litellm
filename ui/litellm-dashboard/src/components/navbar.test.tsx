@@ -152,18 +152,18 @@ describe("Navbar", () => {
   it("should link the logo to the UI home route rather than the proxy origin", () => {
     renderWithProviders(<Navbar {...defaultProps} />);
 
-    expect(screen.getByRole("link", { name: /litellm brand/i })).toHaveAttribute("href", "/ui");
+    expect(screen.getByRole("link", { name: /semantier cloud finops/i })).toHaveAttribute("href", "/ui");
   });
 
   it("pairs the logo with a dark-mode variant that swaps on the dark class", () => {
     renderWithProviders(<Navbar {...defaultProps} />);
 
-    const [light, dark] = Array.from(screen.getByRole("link", { name: /litellm brand/i }).querySelectorAll("img"));
+    const [light, dark] = Array.from(screen.getByRole("link", { name: /semantier cloud finops/i }).querySelectorAll("img"));
     const classesOf = (el: Element) => new Set(el.className.split(/\s+/));
 
     const lightSrc = light.getAttribute("src") ?? "";
-    expect(light).toHaveAttribute("src", expect.stringMatching(/\/get_image$/));
-    expect(dark).toHaveAttribute("src", `${lightSrc}?theme=dark`);
+    expect(lightSrc).toBe("/ui/semantier-cloud-finops.svg");
+    expect(dark).toHaveAttribute("src", lightSrc);
     expect(classesOf(light).has("dark:hidden")).toBe(true);
     expect(classesOf(light).has("hidden")).toBe(false);
     expect(classesOf(dark).has("hidden")).toBe(true);
@@ -255,7 +255,7 @@ describe("Navbar", () => {
 
     renderWithProviders(<Navbar {...defaultProps} />);
 
-    const logoImg = screen.getByAltText("LiteLLM Brand");
+    const logoImg = screen.getByAltText("Semantier Cloud FinOps");
     expect(logoImg).toHaveAttribute("src", "https://example.com/custom-logo.png");
 
     // Reset mock

@@ -1,4 +1,5 @@
 "use client";
+import { PRODUCT_SHORT_NAME } from "@/lib/branding";
 
 import { useEffect, useMemo, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from "react";
 import { useDebouncedValue } from "@tanstack/react-pacer/debouncer";
@@ -298,7 +299,7 @@ function CommandPaletteDialog({ setOpen }: { setOpen: (open: boolean) => void })
         </div>
         <div className="flex h-10 items-center justify-between border-t border-border bg-muted/30 px-3 text-xs text-muted-foreground">
           <div className="flex items-center gap-2">
-            <span className="font-medium text-foreground">LiteLLM</span>
+            <span className="font-medium text-foreground">{PRODUCT_SHORT_NAME}</span>
             <span>{scope === "keys" ? "Virtual Keys" : "All pages"}</span>
           </div>
           <div className="flex items-center gap-3">

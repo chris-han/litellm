@@ -117,6 +117,8 @@ describe("SidebarAccountMenu", () => {
 
     expect(screen.getAllByText("test@example.com").length).toBeGreaterThan(0);
     expect(screen.getByText("test-user-id")).toBeInTheDocument();
+    expect(screen.getByText("Semantier", { exact: true })).toBeInTheDocument();
+    expect(screen.queryByText("LiteLLM", { exact: true })).not.toBeInTheDocument();
     expect(screen.getAllByText("Admin").length).toBeGreaterThan(0);
   });
 
@@ -171,7 +173,7 @@ describe("SidebarAccountMenu", () => {
     const user = userEvent.setup();
     renderWithProviders(<SidebarAccountMenu onLogout={mockOnLogout} />);
     await openMenu(user);
-    expect(screen.getByTitle("Thanks for using LiteLLM!")).toBeInTheDocument();
+    expect(screen.getByTitle("Thanks for using Semantier Cloud FinOps!")).toBeInTheDocument();
   });
 
   it("should hide the bouncing icon when Hide Bouncing Icon is enabled", async () => {
@@ -179,7 +181,7 @@ describe("SidebarAccountMenu", () => {
     mockUseDisableBouncingIconImpl = () => true;
     renderWithProviders(<SidebarAccountMenu onLogout={mockOnLogout} />);
     await openMenu(user);
-    expect(screen.queryByTitle("Thanks for using LiteLLM!")).not.toBeInTheDocument();
+    expect(screen.queryByTitle("Thanks for using Semantier Cloud FinOps!")).not.toBeInTheDocument();
   });
 
   it("wires the email row to the shared copy button", async () => {

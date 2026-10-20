@@ -1,3 +1,4 @@
+import { PRODUCT_NAME } from "@/lib/branding";
 import React, { useState } from "react";
 import { CopyToClipboard } from "react-copy-to-clipboard";
 import { ChevronDown, ChevronUp } from "lucide-react";
@@ -14,11 +15,11 @@ interface CreatedKeyDisplayProps {
 export const buildAgentInstructions = (baseUrl: string, apiKey: string): string => {
   const normalizedBaseUrl = baseUrl.replace(/\/+$/, "");
   const endpointIntroduction =
-    "LiteLLM is a gateway that exposes OpenAI and Anthropic compatible APIs. " +
+    `${PRODUCT_NAME} exposes OpenAI and Anthropic compatible APIs. ` +
     `Send the virtual key as a Bearer token (Authorization: Bearer ${apiKey}) to:`;
 
   return [
-    "Use this LiteLLM AI gateway for model inference.",
+    `Use ${PRODUCT_NAME} for model inference.`,
     "",
     `Gateway URL: ${normalizedBaseUrl}`,
     `Virtual key: ${apiKey}`,
@@ -63,7 +64,7 @@ const CreatedKeyDisplay: React.FC<CreatedKeyDisplayProps> = ({ apiKey }) => {
     <div>
       <p className="mb-2">
         Please save this secret key somewhere safe and accessible. For security reasons,{" "}
-        <b>you will not be able to view it again</b> through your LiteLLM account. If you lose this secret key, you will
+        <b>you will not be able to view it again</b> through your {PRODUCT_NAME} account. If you lose this secret key, you will
         need to generate a new one.
       </p>
 

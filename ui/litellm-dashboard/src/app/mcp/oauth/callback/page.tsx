@@ -1,4 +1,5 @@
 "use client";
+import { PRODUCT_NAME } from "@/lib/branding";
 
 import { Suspense, useEffect, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
@@ -79,9 +80,9 @@ const McpOAuthCallbackContent = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-muted p-6">
       <div className="max-w-lg w-full rounded-lg bg-card shadow-md p-8 text-center space-y-4">
-        <h1 className="text-xl font-semibold text-foreground">LiteLLM MCP OAuth</h1>
+        <h1 className="text-xl font-semibold text-foreground">{PRODUCT_NAME} MCP OAuth</h1>
         <p className="text-sm text-foreground">
-          Authorization complete. You may close this window and return to the LiteLLM dashboard.
+          Authorization complete. You may close this window and return to the {PRODUCT_NAME} dashboard.
         </p>
         <p className="text-xs text-muted-foreground">
           If the window does not close automatically, everything is still saved—you can close it manually.

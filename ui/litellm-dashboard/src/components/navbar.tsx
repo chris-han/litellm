@@ -2,7 +2,7 @@ import { useHealthReadinessDetails } from "@/app/(dashboard)/hooks/healthReadine
 import { useDisableBouncingIcon } from "@/app/(dashboard)/hooks/useDisableBouncingIcon";
 import { useDisableShowPrompts } from "@/app/(dashboard)/hooks/useDisableShowPrompts";
 import { useWorker } from "@/hooks/useWorker";
-import { getProxyBaseUrl } from "@/components/networking";
+import { PRODUCT_LOGO, PRODUCT_NAME } from "@/lib/branding";
 import { uiHref } from "@/utils/uiHref";
 import { useTheme } from "@/contexts/ThemeContext";
 import { revokeSessionAndClearClientState, useLogout } from "@/app/(dashboard)/hooks/useLogout";
@@ -38,7 +38,6 @@ const Navbar: React.FC<NavbarProps> = ({
   onToggleSidebar,
   deploymentHealth,
 }) => {
-  const baseUrl = getProxyBaseUrl();
   const { logoUrl } = useTheme();
   const { data: healthData } = useHealthReadinessDetails(accessToken);
   const version = healthData?.litellm_version;
@@ -47,8 +46,8 @@ const Navbar: React.FC<NavbarProps> = ({
   const { isControlPlane, selectedWorker } = useWorker();
   const showWorkerSwitch = isControlPlane && selectedWorker !== null;
 
-  const imageUrl = logoUrl || `${baseUrl}/get_image`;
-  const darkImageUrl = logoUrl || `${baseUrl}/get_image?theme=dark`;
+  const imageUrl = logoUrl || PRODUCT_LOGO;
+  const darkImageUrl = logoUrl || PRODUCT_LOGO;
 
   const handleLogout = useLogout(accessToken);
 
@@ -83,7 +82,7 @@ const Navbar: React.FC<NavbarProps> = ({
               <Link href={uiHref("")} className="flex items-center">
                 <div className="relative">
                   <div className="flex h-10 max-w-48 items-center justify-center overflow-hidden">
-                    <img src={imageUrl} alt="LiteLLM Brand" className={cn(NAV_LOGO_CLASS_NAME, "dark:hidden")} />
+                    <img src={imageUrl} alt={PRODUCT_NAME} className={cn(NAV_LOGO_CLASS_NAME, "dark:hidden")} />
                     <img
                       src={darkImageUrl}
                       alt=""
@@ -99,7 +98,7 @@ const Navbar: React.FC<NavbarProps> = ({
                     <span
                       className="absolute -left-2 -top-1 animate-bounce text-lg"
                       style={{ animationDuration: "2s" }}
-                      title="Thanks for using LiteLLM!"
+                      title={`Thanks for using ${PRODUCT_NAME}!`}
                     >
                       🌑
                     </span>

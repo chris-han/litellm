@@ -164,12 +164,12 @@ describe("buildAgentInstructions", () => {
   it("builds shared instructions with both agent settings and a normalized URL", () => {
     expect(buildAgentInstructions("http://gw.test:4000/", "sk-test-123")).toBe(
       [
-        "Use this LiteLLM AI gateway for model inference.",
+        "Use Semantier Cloud FinOps for model inference.",
         "",
         "Gateway URL: http://gw.test:4000",
         "Virtual key: sk-test-123",
         "",
-        "LiteLLM is a gateway that exposes OpenAI and Anthropic compatible APIs. Send the virtual key as a Bearer token (Authorization: Bearer sk-test-123) to:",
+        "Semantier Cloud FinOps exposes OpenAI and Anthropic compatible APIs. Send the virtual key as a Bearer token (Authorization: Bearer sk-test-123) to:",
         "- POST http://gw.test:4000/v1/chat/completions (OpenAI Chat Completions)",
         "- POST http://gw.test:4000/v1/responses (OpenAI Responses)",
         "- POST http://gw.test:4000/v1/messages (Anthropic Messages)",

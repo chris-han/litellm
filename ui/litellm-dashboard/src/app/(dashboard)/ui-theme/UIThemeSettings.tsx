@@ -1,3 +1,4 @@
+import { PRODUCT_NAME } from "@/lib/branding";
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -126,7 +127,7 @@ const UIThemeSettings: React.FC<UIThemeSettingsProps> = ({ userID, userRole, acc
       <div className="mb-8">
         <h1 className="mb-2 text-2xl font-bold">UI Theme Customization</h1>
         <p className="text-sm text-muted-foreground">
-          Customize your LiteLLM admin dashboard with a custom logo and favicon.
+          Customize your {PRODUCT_NAME} dashboard with a custom logo and favicon.
         </p>
       </div>
       <Card>

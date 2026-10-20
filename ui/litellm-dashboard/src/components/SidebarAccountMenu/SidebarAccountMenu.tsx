@@ -1,3 +1,4 @@
+import { PRODUCT_LOGO, PRODUCT_NAME, PRODUCT_SHORT_NAME } from "@/lib/branding";
 import useAuthorized from "@/app/(dashboard)/hooks/useAuthorized";
 import { useHealthReadinessDetails } from "@/app/(dashboard)/hooks/healthReadiness/useHealthReadinessDetails";
 import { useDisableBlogPosts } from "@/app/(dashboard)/hooks/useDisableBlogPosts";
@@ -186,22 +187,20 @@ const SidebarAccountMenu: React.FC<SidebarAccountMenuProps> = ({ onLogout, colla
         data-testid="sidebar-account-menu-panel"
       >
         <div className="flex items-center gap-2 border-b border-border px-3 py-3">
-          <span className="text-[15px] font-bold tracking-tight text-foreground">LiteLLM</span>
-          {!disableBouncingIcon && (
-            <span
-              className="animate-bounce text-lg leading-none"
-              style={{ animationDuration: "2s" }}
-              title="Thanks for using LiteLLM!"
-              aria-hidden
-            >
-              🌴
-            </span>
-          )}
+          <img
+            src={PRODUCT_LOGO}
+            alt=""
+            aria-hidden
+            className={cn("size-6 shrink-0", !disableBouncingIcon && "animate-bounce")}
+            style={disableBouncingIcon ? undefined : { animationDuration: "2s" }}
+            title={disableBouncingIcon ? undefined : `Thanks for using ${PRODUCT_NAME}!`}
+          />
+          <span className="text-[15px] font-bold tracking-tight text-foreground">{PRODUCT_SHORT_NAME}</span>
           <span className="flex-1" />
-          {version && (
+          {version && version !== "unknown" && (
             <Badge
               variant="outline"
-              render={<a href={RELEASE_NOTES_URL} target="_blank" rel="noopener noreferrer" />}
+              render={<a href={RELEASE_NOTES_URL} target="_blank" rel="noopener noreferrer" aria-label={`LiteLLM engine v${version} release notes`} />}
               className="px-1.5 py-0 font-mono text-[10px] font-medium text-muted-foreground"
             >
               v{version}
