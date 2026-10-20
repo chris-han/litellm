@@ -1,4 +1,5 @@
 import React from "react";
+import { PRODUCT_NAME, PRODUCT_SHORT_NAME, PRODUCT_LOGO } from "@/lib/branding";
 import { CircleAlert, Info } from "lucide-react";
 import { z } from "zod";
 import { Alert, AlertDescription, AlertTitle } from "@/components/shared/Alert";
@@ -38,7 +39,10 @@ export function OnboardingFormBody({ variant, userEmail, isPending, claimError, 
     <div className="mx-auto w-full max-w-md mt-10">
       <Card>
         <CardContent>
-          <h5 className="text-center mb-5 text-base font-semibold text-foreground">🚅 LiteLLM</h5>
+          <div className="flex flex-col items-center gap-2 mb-5">
+            <img src={PRODUCT_LOGO} alt={PRODUCT_SHORT_NAME} className="size-12 object-contain" />
+            <h5 className="text-center text-base font-semibold text-foreground">{PRODUCT_NAME}</h5>
+          </div>
           <h3 className="text-2xl font-semibold text-foreground">{actionLabel}</h3>
           <p className="text-sm text-foreground">
             {isResetPassword

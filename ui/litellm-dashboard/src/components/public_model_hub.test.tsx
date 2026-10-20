@@ -4,6 +4,8 @@ import { render, screen, waitFor, within, fireEvent } from "@testing-library/rea
 import userEvent from "@testing-library/user-event";
 import { flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import PublicModelHub from "./public_model_hub";
+import { getPublicModelHubInfo } from "./networking";
+import { PRODUCT_NAME } from "@/lib/branding";
 import { getPublicMCPHubColumns, MCPServerData, ModelGroupInfo } from "./PublicModelHubTableColumns";
 
 const { apiGetMock } = vi.hoisted(() => ({ apiGetMock: vi.fn() }));
@@ -139,6 +141,20 @@ beforeEach(() => {
 });
 
 describe("PublicModelHub", () => {
+  it.each([
+    ["LiteLLM API", PRODUCT_NAME],
+    ["Engineering model catalog", "Engineering model catalog"],
+  ])("renders the resolved public title for %s", async (docsTitle, expected) => {
+    vi.mocked(getPublicModelHubInfo).mockResolvedValueOnce({
+      docs_title: docsTitle,
+      custom_docs_description: null,
+      litellm_version: "1.0.0",
+      useful_links: {},
+    });
+    renderHub();
+    expect(await screen.findByRole("heading", { name: expected, level: 1 })).toBeInTheDocument();
+  });
+
   it("renders", () => {
     const { container } = renderHub();
     expect(container).toBeInTheDocument();

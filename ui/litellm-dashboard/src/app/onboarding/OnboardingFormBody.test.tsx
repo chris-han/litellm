@@ -1,4 +1,5 @@
 import React from "react";
+import { PRODUCT_NAME, PRODUCT_LOGO, PRODUCT_SHORT_NAME } from "@/lib/branding";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach } from "vitest";
@@ -15,6 +16,12 @@ const defaultProps = {
 describe("OnboardingFormBody", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  it.each(["signup", "reset_password"] as const)("brands the %s form", (variant) => {
+    render(<OnboardingFormBody {...defaultProps} variant={variant} />);
+    expect(screen.getByRole("heading", { name: PRODUCT_NAME })).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: PRODUCT_SHORT_NAME })).toHaveAttribute("src", PRODUCT_LOGO);
   });
 
   it("should show 'Sign Up' heading for signup variant", () => {

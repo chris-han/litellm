@@ -145,7 +145,7 @@ const VECTOR_STORE_ID_PLACEHOLDERS: Record<string, string> = {
   mongodb: "my-vector-index (MongoDB Vector Search index name)",
 };
 
-const VERTEX_SEARCH_API_WITH_ENGINE_PLACEHOLDER = "Any identifier you'll use to reference this in LiteLLM";
+const VERTEX_SEARCH_API_WITH_ENGINE_PLACEHOLDER = "Any identifier you'll use to reference this in the gateway";
 
 const DEFAULT_VECTOR_STORE_ID_PLACEHOLDER = "Enter vector store ID from your provider";
 
@@ -439,7 +439,7 @@ const VectorStoreForm: React.FC<VectorStoreFormProps> = ({
                       <li>
                         For website, healthcare, and connector-based sources (Drive, Gmail, Slack, Jira, etc.): create a
                         search app on top of the data store, then copy the <strong>Engine ID</strong> and enter it in
-                        the Engine ID field. The Vector Store ID is still required as the LiteLLM-side name for this
+                        the Engine ID field. The Vector Store ID is still required as the gateway-side name for this
                         record, but it isn&apos;t used in the GCP URL when Engine ID is set.
                       </li>
                     </ol>
@@ -466,7 +466,7 @@ const VectorStoreForm: React.FC<VectorStoreFormProps> = ({
                 name="vector_store_name"
                 label={labelWithHint(
                   "Vector Store Name",
-                  "Custom name you want to give to the vector store, this name will be rendered on the LiteLLM UI",
+                  "Display name for this vector store in the dashboard",
                 )}
               >
                 {({ ref, value, ...field }) => <Input {...field} ref={ref} value={value ?? ""} />}

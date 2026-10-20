@@ -1,3 +1,5 @@
+import { PRODUCT_NAME } from "@/lib/branding";
+import { publicModelHubTitle } from "./publicModelHub/publicModelHubTitle";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { ExternalLinkIcon, SearchIcon } from "@heroicons/react/outline";
 import { SortingState } from "@tanstack/react-table";
@@ -95,7 +97,7 @@ const PublicModelHub: React.FC<PublicModelHubProps> = ({ accessToken, isEmbedded
   const [proxyConfigured, setProxyConfigured] = useState<boolean>(false);
   const [agentHubData, setAgentHubData] = useState<AgentCard[] | null>(null);
   const [mcpHubData, setMcpHubData] = useState<MCPServerData[] | null>(null);
-  const [pageTitle, setPageTitle] = useState<string>("LiteLLM Gateway");
+  const [pageTitle, setPageTitle] = useState<string>(PRODUCT_NAME);
   const [customDocsDescription, setCustomDocsDescription] = useState<string | null>(null);
   const [litellmVersion, setLitellmVersion] = useState<string>("");
   const [usefulLinks, setUsefulLinks] = useState<Record<string, string | { url: string; index: number }>>({});
@@ -152,7 +154,7 @@ const PublicModelHub: React.FC<PublicModelHubProps> = ({ accessToken, isEmbedded
 
       const fetchPublicModelHubInfo = async () => {
         const publicModelHubInfo = await getPublicModelHubInfo();
-        setPageTitle(publicModelHubInfo.docs_title);
+        setPageTitle(publicModelHubTitle(publicModelHubInfo.docs_title));
         setCustomDocsDescription(publicModelHubInfo.custom_docs_description);
         setLitellmVersion(publicModelHubInfo.litellm_version);
         setUsefulLinks(publicModelHubInfo.useful_links || {});
@@ -335,6 +337,7 @@ const PublicModelHub: React.FC<PublicModelHubProps> = ({ accessToken, isEmbedded
           {!isEmbedded && <Navbar accessToken={accessToken || null} isPublicPage={true} />}
 
           <div className={isEmbedded ? "w-full p-6" : "w-full px-8 py-12"}>
+            {!isEmbedded && <h1 className="text-3xl font-semibold mb-6 text-foreground">{pageTitle}</h1>}
             {/* Embedded Explainer - only shown when embedded in dashboard */}
             {isEmbedded && (
               <div className="mb-6 p-4 bg-info/10 border border-info/20 rounded-lg">

@@ -1,5 +1,6 @@
 "use client";
 import React from "react";
+import { PRODUCT_NAME } from "@/lib/branding";
 import CodeBlock from "@/components/CodeBlock";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import DocLink from "./DocLink";
@@ -30,8 +31,8 @@ const APIReferenceView: React.FC<ApiRefProps> = ({ proxySettings }) => {
         </div>
 
         <p className="mt-2 mb-2 text-sm text-muted-foreground">
-          LiteLLM is OpenAI Compatible. This means your API Key works with the OpenAI SDK. Just replace the base_url to
-          point to your litellm proxy. Example Below{" "}
+          {PRODUCT_NAME} is OpenAI compatible. Use your gateway API key with the OpenAI SDK and set base_url to
+          your gateway endpoint. See the examples below.
         </p>
 
         <Tabs defaultValue="openai">
