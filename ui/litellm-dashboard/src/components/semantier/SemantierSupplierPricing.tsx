@@ -136,7 +136,7 @@ export function SemantierSupplierPricing() {
           {message}
         </p>
       )}
-      <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-2 text-sm">
+      <dl className="grid grid-cols-1 gap-x-4 gap-y-2 text-sm sm:grid-cols-[auto_minmax(0,1fr)]">
         <dt>Selected collection version</dt>
         <dd className="break-all font-mono">{version ?? "No collected version"}</dd>
         <dt>Native effective version</dt>
