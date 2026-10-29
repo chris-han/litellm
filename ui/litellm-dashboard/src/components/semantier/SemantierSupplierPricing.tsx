@@ -19,6 +19,7 @@ interface Source {
   collected_version: string | null;
   capabilities: { sync: boolean };
   worker_convergence: string;
+  fx_basis?: string;
   selected: {
     projection_version: string;
     effective_revision: string | null;
@@ -275,6 +276,8 @@ export function SemantierSupplierPricing() {
               ))}
             </select>
           </label>
+          {source.data.fx_basis && <p className="text-sm text-muted-foreground">{source.data.fx_basis}</p>}
+          {fx && source.data.fx_quotes?.find((q) => q.quote_id === fx) && <p className="text-sm break-words">{source.data.fx_quotes.find((q) => q.quote_id === fx)?.source}</p>}
           {!source.data.fx_quotes?.length && (
             <p className="text-sm">
               USD mapping unavailable until a governed FX version exists. CNY data remains viewable.
