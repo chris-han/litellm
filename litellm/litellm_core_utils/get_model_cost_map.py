@@ -474,6 +474,15 @@ async def refetch_model_cost_map(
         _cost_map_source_info.fallback_reason = None
         return _finalize_loaded_model_cost_map(GetModelCostMap.load_local_model_cost_map_with_revision())
 
+    # This exact configured service-authenticated URL is metadata, not a model
+    # invocation. Do not borrow the admitted inference transport or follow a
+    # redirect that could disclose its service credential.
+    if client is None and _private_source_headers(url):
+        async with httpx.AsyncClient(trust_env=False, follow_redirects=False) as metadata_client:
+            return await refetch_model_cost_map(
+                url, timeout=timeout, max_attempts=max_attempts, sleep=sleep, rng=rng, client=metadata_client
+            )
+
     result: Final = await _fetch_remote_model_cost_map_with_retry(
         url=url,
         timeout=timeout,
