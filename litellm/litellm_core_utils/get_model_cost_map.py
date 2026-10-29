@@ -260,11 +260,11 @@ def _retry_wait_seconds(outcome: _FetchAttemptRetryable, attempt: int, rng: rand
 
 
 class _AsyncGetClient(Protocol):
-    def get(self, url: str, *, timeout: float | None = None, headers: dict[str, str] | None = None) -> Awaitable[httpx.Response]: ...
+    def get(self, url: str, *, timeout: float | None = None) -> Awaitable[httpx.Response]: ...
 
 
 class _SyncGetClient(Protocol):
-    def get(self, url: str, *, timeout: float | None = None, headers: dict[str, str] | None = None) -> httpx.Response: ...
+    def get(self, url: str, *, timeout: float | None = None) -> httpx.Response: ...
 
 
 class _S3Body(Protocol):
@@ -348,14 +348,6 @@ def _attempt_fetch_s3(parts: urllib.parse.SplitResult, url: str, timeout: int) -
     return _classify_fetch_content(content, url, response.get("ETag"))
 
 
-def _private_source_headers(url: str) -> dict[str, str] | None:
-    """Optional service auth only for the exact operator-configured source URL."""
-    token = os.environ.get("LITELLM_MODEL_COST_MAP_API_KEY")
-    if token and url == os.environ.get("LITELLM_MODEL_COST_MAP_URL"):
-        return {"Authorization": "Bearer " + token}
-    return None
-
-
 async def _attempt_fetch(client: _AsyncGetClient, url: str, timeout: int) -> _FetchAttemptOutcome:
     parts: Final = _split_url(url)
     if isinstance(parts, ModelCostMapReloadUnavailable):
@@ -363,8 +355,7 @@ async def _attempt_fetch(client: _AsyncGetClient, url: str, timeout: int) -> _Fe
     if parts.scheme == "s3":
         return await asyncio.to_thread(_attempt_fetch_s3, parts, url, timeout)
     try:
-        headers: Final = _private_source_headers(url)
-        response: Final = await client.get(url, timeout=timeout, headers=headers) if headers else await client.get(url, timeout=timeout)
+        response: Final = await client.get(url, timeout=timeout)
     except (httpx.HTTPError, httpx.InvalidURL) as e:
         return _classify_fetch_error(e, url)
     return _classify_fetch_response(response, url)
@@ -377,8 +368,7 @@ def _attempt_fetch_sync(client: _SyncGetClient, url: str, timeout: int) -> _Fetc
     if parts.scheme == "s3":
         return _attempt_fetch_s3(parts, url, timeout)
     try:
-        headers: Final = _private_source_headers(url)
-        response: Final = client.get(url, timeout=timeout, headers=headers) if headers else client.get(url, timeout=timeout)
+        response: Final = client.get(url, timeout=timeout)
     except (httpx.HTTPError, httpx.InvalidURL) as e:
         return _classify_fetch_error(e, url)
     return _classify_fetch_response(response, url)
@@ -473,15 +463,6 @@ async def refetch_model_cost_map(
         _cost_map_source_info.is_env_forced = True
         _cost_map_source_info.fallback_reason = None
         return _finalize_loaded_model_cost_map(GetModelCostMap.load_local_model_cost_map_with_revision())
-
-    # This exact configured service-authenticated URL is metadata, not a model
-    # invocation. Do not borrow the admitted inference transport or follow a
-    # redirect that could disclose its service credential.
-    if client is None and _private_source_headers(url):
-        async with httpx.AsyncClient(trust_env=False, follow_redirects=False) as metadata_client:
-            return await refetch_model_cost_map(
-                url, timeout=timeout, max_attempts=max_attempts, sleep=sleep, rng=rng, client=metadata_client
-            )
 
     result: Final = await _fetch_remote_model_cost_map_with_retry(
         url=url,

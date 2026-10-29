@@ -1246,17 +1246,3 @@ def test_get_backup_model_cost_map():
         print("inside backup")
         content = json.load(f)
         print("content", content)
-
-
-def test_private_catalog_credentials_only_target_the_configured_url(monkeypatch):
-    """Private backend catalogue auth never attaches to an unrelated source."""
-    from litellm.litellm_core_utils.get_model_cost_map import _private_source_headers
-
-    monkeypatch.setenv("LITELLM_MODEL_COST_MAP_URL", "http://pricing-service.test/cost-map")
-    monkeypatch.setenv("LITELLM_MODEL_COST_MAP_API_KEY", "fixture-service-identity")
-    assert _private_source_headers("http://pricing-service.test/cost-map") == {
-        "Authorization": "Bearer fixture-service-identity"
-    }
-    assert _private_source_headers("https://unrelated.test/cost-map") is None
-    monkeypatch.delenv("LITELLM_MODEL_COST_MAP_API_KEY")
-    assert _private_source_headers("http://pricing-service.test/cost-map") is None

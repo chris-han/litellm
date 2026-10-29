@@ -7,6 +7,8 @@ import { renderWithProviders } from "../../../../tests/test-utils";
 import { recordUiEvent } from "@/lib/telemetry/uiEvents";
 import ModelsAndEndpointsPage from "./page";
 
+const gateway = vi.hoisted(() => ({ enabled: false }));
+vi.mock("@/lib/http/semantier", () => ({ get isSemantierGateway() { return gateway.enabled; } }));
 vi.mock("@/lib/telemetry/uiEvents", () => ({ recordUiEvent: vi.fn(() => Promise.resolve()) }));
 vi.mock("next/navigation", () => ({ usePathname: () => "/ui/models-and-endpoints" }));
 
@@ -76,6 +78,7 @@ const ADD_MODEL_PREFILL_LINK = "?tab=add&provider=typesafe&litellm_model=typesaf
 
 describe("ModelsAndEndpointsPage", () => {
   beforeEach(() => {
+    gateway.enabled = false;
     detailState.modelId = null;
     detailState.teamId = null;
     mockUseAuthorized.mockReturnValue(ADMIN);
@@ -168,6 +171,19 @@ describe("ModelsAndEndpointsPage", () => {
       "Model Access Group Budgets Beta",
       "Price Data Reload",
     ]);
+  });
+
+  it("uses native admin permissions for price data in the Semantier gateway", () => {
+    gateway.enabled = true;
+    renderPage();
+    expect(screen.getByRole("tab", { name: "Price Data Reload" })).toBeInTheDocument();
+  });
+
+  it("does not grant native price data to a view-only admin in the Semantier gateway", () => {
+    gateway.enabled = true;
+    mockUseAuthorized.mockReturnValue(VIEW_ONLY_ADMIN);
+    renderPage();
+    expect(screen.queryByRole("tab", { name: "Price Data Reload" })).not.toBeInTheDocument();
   });
 
   it("hides the admin write-form tabs from a view-only admin, keeping the read views", () => {
