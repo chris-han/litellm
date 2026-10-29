@@ -260,11 +260,11 @@ def _retry_wait_seconds(outcome: _FetchAttemptRetryable, attempt: int, rng: rand
 
 
 class _AsyncGetClient(Protocol):
-    def get(self, url: str, *, timeout: float | None = None) -> Awaitable[httpx.Response]: ...
+    def get(self, url: str, *, timeout: float | None = None, headers: dict[str, str] | None = None) -> Awaitable[httpx.Response]: ...
 
 
 class _SyncGetClient(Protocol):
-    def get(self, url: str, *, timeout: float | None = None) -> httpx.Response: ...
+    def get(self, url: str, *, timeout: float | None = None, headers: dict[str, str] | None = None) -> httpx.Response: ...
 
 
 class _S3Body(Protocol):
@@ -348,6 +348,14 @@ def _attempt_fetch_s3(parts: urllib.parse.SplitResult, url: str, timeout: int) -
     return _classify_fetch_content(content, url, response.get("ETag"))
 
 
+def _private_source_headers(url: str) -> dict[str, str] | None:
+    """Optional service auth only for the exact operator-configured source URL."""
+    token = os.environ.get("LITELLM_MODEL_COST_MAP_API_KEY")
+    if token and url == os.environ.get("LITELLM_MODEL_COST_MAP_URL"):
+        return {"Authorization": "Bearer " + token}
+    return None
+
+
 async def _attempt_fetch(client: _AsyncGetClient, url: str, timeout: int) -> _FetchAttemptOutcome:
     parts: Final = _split_url(url)
     if isinstance(parts, ModelCostMapReloadUnavailable):
@@ -355,7 +363,8 @@ async def _attempt_fetch(client: _AsyncGetClient, url: str, timeout: int) -> _Fe
     if parts.scheme == "s3":
         return await asyncio.to_thread(_attempt_fetch_s3, parts, url, timeout)
     try:
-        response: Final = await client.get(url, timeout=timeout)
+        headers: Final = _private_source_headers(url)
+        response: Final = await client.get(url, timeout=timeout, headers=headers) if headers else await client.get(url, timeout=timeout)
     except (httpx.HTTPError, httpx.InvalidURL) as e:
         return _classify_fetch_error(e, url)
     return _classify_fetch_response(response, url)
@@ -368,7 +377,8 @@ def _attempt_fetch_sync(client: _SyncGetClient, url: str, timeout: int) -> _Fetc
     if parts.scheme == "s3":
         return _attempt_fetch_s3(parts, url, timeout)
     try:
-        response: Final = client.get(url, timeout=timeout)
+        headers: Final = _private_source_headers(url)
+        response: Final = client.get(url, timeout=timeout, headers=headers) if headers else client.get(url, timeout=timeout)
     except (httpx.HTTPError, httpx.InvalidURL) as e:
         return _classify_fetch_error(e, url)
     return _classify_fetch_response(response, url)

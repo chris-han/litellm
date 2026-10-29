@@ -1,3 +1,4 @@
+import { isSemantierGateway } from "@/lib/http/semantier";
 import React, { useEffect, useState } from "react";
 import { Ban, Clock3, Cloud, Database, Info, LoaderCircle, RefreshCw, TriangleAlert } from "lucide-react";
 
@@ -163,7 +164,7 @@ const PriceDataReload: React.FC<PriceDataReloadProps> = ({
   const [sourceInfo, setSourceInfo] = useState<CostMapSourceInfo | null>(null);
 
   const fetchReloadStatus = async () => {
-    if (!accessToken) return;
+    if (!accessToken && !isSemantierGateway) return;
 
     try {
       const status = await getModelCostMapReloadStatus(accessToken);
@@ -175,7 +176,7 @@ const PriceDataReload: React.FC<PriceDataReloadProps> = ({
   };
 
   const fetchSourceInfo = async () => {
-    if (!accessToken) return;
+    if (!accessToken && !isSemantierGateway) return;
 
     try {
       setSourceInfo(await getModelCostMapSource(accessToken));
@@ -203,7 +204,7 @@ const PriceDataReload: React.FC<PriceDataReloadProps> = ({
   }, [accessToken]);
 
   const handleHardRefresh = async () => {
-    if (!accessToken) {
+    if (!accessToken && !isSemantierGateway) {
       toast.fromError("No access token available");
       return;
     }
@@ -229,7 +230,7 @@ const PriceDataReload: React.FC<PriceDataReloadProps> = ({
   };
 
   const handleScheduleReload = async () => {
-    if (!accessToken) {
+    if (!accessToken && !isSemantierGateway) {
       toast.fromError("No access token available");
       return;
     }
@@ -260,7 +261,7 @@ const PriceDataReload: React.FC<PriceDataReloadProps> = ({
   };
 
   const handleCancelReload = async () => {
-    if (!accessToken) {
+    if (!accessToken && !isSemantierGateway) {
       toast.fromError("No access token available");
       return;
     }

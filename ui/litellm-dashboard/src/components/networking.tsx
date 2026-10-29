@@ -634,6 +634,7 @@ export const modelCostMap = async (catalogOnly = false) => {
 };
 
 export const reloadModelCostMap = async (accessToken: string) => {
+  if (isSemantierGateway) return semantierApi.post("/api/admin/model-gateway/pricing/reload");
   try {
     const url = proxyBaseUrl ? `${proxyBaseUrl}/reload/model_cost_map` : `/reload/model_cost_map`;
     const response = await fetch(url, {
@@ -652,6 +653,7 @@ export const reloadModelCostMap = async (accessToken: string) => {
 };
 
 export const scheduleModelCostMapReload = async (accessToken: string, hours: number) => {
+  if (isSemantierGateway) return semantierApi.post("/api/admin/model-gateway/pricing/reload-schedule", { body: { hours } });
   try {
     const url = proxyBaseUrl
       ? `${proxyBaseUrl}/schedule/model_cost_map_reload?hours=${hours}`
@@ -672,6 +674,7 @@ export const scheduleModelCostMapReload = async (accessToken: string, hours: num
 };
 
 export const cancelModelCostMapReload = async (accessToken: string) => {
+  if (isSemantierGateway) return semantierApi.delete("/api/admin/model-gateway/pricing/reload-schedule");
   try {
     const url = proxyBaseUrl ? `${proxyBaseUrl}/schedule/model_cost_map_reload` : `/schedule/model_cost_map_reload`;
     const response = await fetch(url, {
@@ -690,6 +693,10 @@ export const cancelModelCostMapReload = async (accessToken: string) => {
 };
 
 export const getModelCostMapSource = async (accessToken: string) => {
+  if (isSemantierGateway) {
+    const source = await semantierApi.get<{ effective: unknown }>("/api/admin/model-gateway/pricing/source");
+    return source.effective;
+  }
   try {
     const url = proxyBaseUrl ? `${proxyBaseUrl}/model/cost_map/source` : `/model/cost_map/source`;
     const response = await fetch(url, {
@@ -714,6 +721,7 @@ export const getModelCostMapSource = async (accessToken: string) => {
 };
 
 export const getModelCostMapReloadStatus = async (accessToken: string) => {
+  if (isSemantierGateway) return semantierApi.get("/api/admin/model-gateway/pricing/reload-status");
   try {
     const url = proxyBaseUrl
       ? `${proxyBaseUrl}/schedule/model_cost_map_reload/status`

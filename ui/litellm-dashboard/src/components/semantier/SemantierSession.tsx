@@ -20,6 +20,10 @@ export interface SemantierSession {
 
 const SessionContext = createContext<SemantierSession | null>(null);
 
+export function useOptionalSemantierSession() {
+  return useContext(SessionContext);
+}
+
 export function useSemantierSession() {
   const session = useContext(SessionContext);
   if (!session) throw new Error("Semantier organization context unavailable");
