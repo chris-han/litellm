@@ -1,3 +1,5 @@
+import { isSemantierGateway } from "@/lib/http/semantier";
+import { SemantierSupplierPricing } from "@/components/semantier/SemantierSupplierPricing";
 import PriceDataReload from "@/components/price_data_reload";
 import React from "react";
 import useAuthorized from "@/app/(dashboard)/hooks/useAuthorized";
@@ -17,16 +19,20 @@ const PriceDataManagementTab = () => {
             Manage model pricing data and configure automatic reload schedules
           </p>
         </div>
-        <PriceDataReload
-          accessToken={accessToken}
-          onReloadSuccess={() => {
-            queryClient.invalidateQueries({ queryKey: modelCostMapKeys.all });
-          }}
-          buttonText="Reload Price Data"
-          size="middle"
-          type="primary"
-          className="w-full"
-        />
+        {isSemantierGateway ? (
+          <SemantierSupplierPricing />
+        ) : (
+          <PriceDataReload
+            accessToken={accessToken}
+            onReloadSuccess={() => {
+              queryClient.invalidateQueries({ queryKey: modelCostMapKeys.all });
+            }}
+            buttonText="Reload Price Data"
+            size="middle"
+            type="primary"
+            className="w-full"
+          />
+        )}
       </div>
     </div>
   );

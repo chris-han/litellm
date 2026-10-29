@@ -1,5 +1,6 @@
 "use client";
 
+import { useOptionalSemantierSession } from "@/components/semantier/SemantierSession";
 import { isSemantierGateway } from "@/lib/http/semantier";
 
 import { useMemo, useState } from "react";
@@ -91,6 +92,8 @@ const renderPanel = (key: string) => {
 };
 
 export default function ModelsAndEndpointsPage() {
+  const semantierSession = useOptionalSemantierSession();
+  const canViewSupplierPrices = Boolean(semantierSession?.permissions.includes("billing:manage"));
   const { accessToken, userRole, userId: userID, premiumUser, isViewOnly } = useAuthorized();
   const { data: teams } = useTeams();
   const { data: uiSettings } = useUISettings();
@@ -121,7 +124,7 @@ export default function ModelsAndEndpointsPage() {
   const visibleSlugs = useMemo<Array<"" | ModelTabSlug>>(
     () =>
       isSemantierGateway
-        ? ["", ...(canCreate ? ["add" as const] : [])]
+        ? ["", ...(canCreate ? ["add" as const] : []), ...(canViewSupplierPrices ? ["price-data" as const] : [])]
         : [
             "",
             ...(canCreate ? (["add"] as const) : []),
@@ -136,7 +139,7 @@ export default function ModelsAndEndpointsPage() {
               ? (["retry-settings", "model-group-alias", "access-group-budgets", "price-data"] as const)
               : []),
           ],
-    [canCreate, canViewAutoRouters, isAdmin, isInternalUser, isViewOnly],
+    [canCreate, canViewSupplierPrices, canViewAutoRouters, isAdmin, isInternalUser, isViewOnly],
   );
 
   const visibleKeys: readonly string[] = visibleSlugs.map((slug) => slug || BASE_TAB_KEY);
