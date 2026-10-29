@@ -97,3 +97,66 @@ it("collects and restores CNY history without FX or native reload rights", async
   );
   expect(await screen.findByText("2 CNY / 每百万tokens")).toBeInTheDocument();
 });
+
+it("keeps partial CNY data and failed sync visible while FX is unavailable", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (url: string) => {
+      const json = (value: unknown) => new Response(JSON.stringify(value), { status: 200 });
+      if (url.endsWith("/context"))
+        return json({
+          user_id: "operator",
+          organization_id: "A",
+          organization: { id: "A" },
+          permissions: ["billing:manage"],
+        });
+      if (url.endsWith("/source"))
+        return json({
+          capabilities: { sync: true },
+          fx_quotes: [],
+          selected: { snapshot_version: "partial", state: "SYNC_FAILED" },
+          effective: null,
+          deployment_overrides: [{ model: "custom-deployment", fields: ["input_cost_per_token"] }],
+          worker_convergence: "UNKNOWN",
+        });
+      if (url.endsWith("/collections"))
+        return json({
+          data: [
+            {
+              run_id: "r",
+              state: "PARTIAL",
+              snapshot_version: "partial",
+              created_at: "2026-10-29T00:00:00Z",
+              reason: "SOURCE_PARTIAL",
+            },
+          ],
+        });
+      return json({
+        version_id: "partial",
+        collected_at: "2026-10-29T00:00:00Z",
+        effective_from: null,
+        api: { status: "PARTIAL", reason: "MISSING_PAGE" },
+        document: { status: "COMPLETE", url: "https://help.aliyun.com/zh/model-studio/model-pricing" },
+        normalized: [
+          {
+            model: "fixture-model",
+            currency: "CNY",
+            region: "cn-beijing",
+            range: "Default",
+            prices: [{ type: "input_token", price: "2", price_unit: "每百万tokens", time_band: "peak" }],
+          },
+        ],
+      });
+    }),
+  );
+  renderWithProviders(
+    <SemantierSessionProvider>
+      <SemantierSupplierPricing />
+    </SemantierSessionProvider>,
+  );
+  expect(await screen.findByText("2 CNY / 每百万tokens")).toBeInTheDocument();
+  expect(screen.getByText(/SYNC_FAILED/)).toBeInTheDocument();
+  expect(screen.getByText(/USD mapping unavailable until a governed FX version exists/)).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Synchronize selected collection" })).toBeDisabled();
+  expect(screen.getByText(/Deployment override custom-deployment/)).toBeInTheDocument();
+});
